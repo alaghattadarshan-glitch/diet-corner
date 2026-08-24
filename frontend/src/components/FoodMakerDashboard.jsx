@@ -1,0 +1,357 @@
+// frontend/src/components/FoodMakerDashboard.jsx
+
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Bell, Play, CheckCircle2, ClipboardList, Package, ChefHat, Activity, ShieldCheck, AlertCircle } from 'lucide-react';
+
+function FoodMakerDashboard() {
+  const [orders, setOrders] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [kpi, setKpi] = useState({ new: 0, preparing: 0, ready: 0, completed: 0 });
+  const [activeTab, setActiveTab] = useState('all'); // 'all', 'new', 'preparing', 'ready', 'completed'
+  const [bannerNotif, setBannerNotif] = useState(null);
+
+  // Poll orders and notifications
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const resOrders = await fetch('http://127.0.0.1:8000/api/food-maker/orders');
+        if (resOrders.ok) {
+          const data = await resOrders.json();
+          const list = data.orders || [];
+          setOrders(list);
+          
+          // Calculate KPI counts
+          const counts = { new: 0, preparing: 0, ready: 0, completed: 0 };
+          list.forEach(o => {
+            const s = (o.status || '').toLowerCase();
+            if (s === 'received') counts.new++;
+            else if (s === 'accepted' || s === 'preparing') counts.preparing++;
+            else if (s === 'ready') counts.ready++;
+            else if (s === 'completed') counts.completed++;
+          });
+          setKpi(counts);
+        }
+
+        const resNotifs = await fetch('http://127.0.0.1:8000/api/food-maker/notifications');
+        if (resNotifs.ok) {
+          const data = await resNotifs.json();
+          const list = data.notifications || [];
+          setNotifications(list);
+          if (list.length > 0) {
+            // Flash banner for the newest unread order notification
+            const newest = list[0];
+            setBannerNotif(newest);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching kitchen terminal data:", err);
+      }
+    };
+
+    fetchData();
+    const interval = setInterval(fetchData, 4000); // Poll every 4 seconds
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleDismissNotification = async (notifId) => {
+    try {
+      await fetch(`http://127.0.0.1:8000/api/food-maker/notifications/${notifId}/read`, {
+        method: 'PATCH'
+      });
+      setNotifications(prev => prev.filter(n => n.id !== notifId));
+      if (bannerNotif && bannerNotif.id === notifId) {
+        setBannerNotif(null);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleUpdateStatus = async (orderId, newStatus) => {
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/api/food-maker/orders/${orderId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (res.ok) {
+        // Refresh local orders list
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Filter orders based on active tab
+  const filteredOrders = orders.filter(o => {
+    const s = (o.status || '').toLowerCase();
+    if (activeTab === 'new') return s === 'received';
+    if (activeTab === 'preparing') return s === 'accepted' || s === 'preparing';
+    if (activeTab === 'ready') return s === 'ready';
+    if (activeTab === 'completed') return s === 'completed';
+    return true;
+  });
+
+  return (
+    <div className="space-y-6 max-w-6xl mx-auto font-sans text-gray-800">
+      
+      {/* Visual Banner Alert */}
+      {bannerNotif && (
+        <div className="bg-red-500 text-white rounded-3xl p-5 shadow-lg flex justify-between items-center animate-bounce border-2 border-white">
+          <div className="flex items-center gap-3">
+            <Bell className="animate-swing" size={24} />
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-widest bg-red-700 px-2 py-0.5 rounded-full">
+                🔔 NEW ORDER RECEIVED
+              </span>
+              <h4 className="font-extrabold text-sm mt-1">
+                Order #{bannerNotif.order_id} — {bannerNotif.meal_name} (Prep Tier: Tier {bannerNotif.prep_tier})
+              </h4>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link
+              to={`/food-maker/orders/${bannerNotif.order_id}`}
+              onClick={() => handleDismissNotification(bannerNotif.id)}
+              className="bg-white text-red-600 text-xs font-black px-4 py-2 rounded-xl shadow-sm hover:bg-gray-100"
+            >
+              View Order
+            </Link>
+            <button
+              onClick={() => handleDismissNotification(bannerNotif.id)}
+              className="text-white hover:text-gray-200 text-sm font-bold px-2"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Header Info Panel */}
+      <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Darkstore Assembly Console</span>
+          <h1 className="text-2xl font-black text-qcommerce-black flex items-center gap-2">
+            <ChefHat className="text-diet-primary" />
+            <span>AI DIET CORNER — FOOD MAKER TERMINAL</span>
+          </h1>
+          <p className="text-xs text-gray-500 mt-1">
+            Warehouse Node: <b className="text-gray-700">Bengaluru Dark Store</b> • Staff: <b className="text-gray-700">Demo Food Maker</b>
+          </p>
+        </div>
+        <div className="flex items-center gap-2 bg-emerald-50 text-emerald-800 border border-emerald-100 px-4 py-2 rounded-2xl text-xs font-black">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+          <span>ONLINE terminal</span>
+        </div>
+      </div>
+
+      {/* KPI Cards Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white border border-gray-200 rounded-3xl p-5 shadow-sm space-y-1 relative">
+          <span className="block text-[10px] font-black text-gray-400 uppercase">New Orders</span>
+          <span className="block text-3xl font-black text-red-500">{kpi.new}</span>
+          {kpi.new > 0 && (
+            <span className="absolute top-3 right-3 bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full animate-pulse">
+              {kpi.new} PENDING
+            </span>
+          )}
+        </div>
+        <div className="bg-white border border-gray-200 rounded-3xl p-5 shadow-sm space-y-1">
+          <span className="block text-[10px] font-black text-gray-400 uppercase">Preparing</span>
+          <span className="block text-3xl font-black text-amber-500">{kpi.preparing}</span>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-3xl p-5 shadow-sm space-y-1">
+          <span className="block text-[10px] font-black text-gray-400 uppercase">Ready for Pickup</span>
+          <span className="block text-3xl font-black text-emerald-500">{kpi.ready}</span>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-3xl p-5 shadow-sm space-y-1">
+          <span className="block text-[10px] font-black text-gray-400 uppercase">Completed Today</span>
+          <span className="block text-3xl font-black text-gray-700">{kpi.completed}</span>
+        </div>
+      </div>
+
+      {/* Navigation Tabs bar */}
+      <div className="flex border-b border-gray-200 text-xs font-black gap-2 overflow-x-auto pb-1">
+        {[
+          { id: 'all', label: 'All Active Queue' },
+          { id: 'new', label: `New Orders 🔴 ${kpi.new}` },
+          { id: 'preparing', label: `Preparing 🟡 ${kpi.preparing}` },
+          { id: 'ready', label: `Ready 🟢 ${kpi.ready}` },
+          { id: 'completed', label: `Completed (${kpi.completed})` }
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-4 py-2 border-b-2 whitespace-nowrap transition-colors ${
+              activeTab === tab.id 
+                ? 'border-diet-primary text-diet-primary' 
+                : 'border-transparent text-gray-500 hover:text-gray-800'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Lanes List */}
+      <div className="space-y-4">
+        {filteredOrders.length === 0 ? (
+          <div className="bg-white border border-gray-200 rounded-3xl p-10 text-center text-xs text-gray-500 font-semibold">
+            No active orders in this queue lane.
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-4">
+            {filteredOrders.map(order => {
+              let statusLabel = '🔴 NEW';
+              let statusClass = 'border-red-200 bg-red-50 text-red-800';
+              
+              if (order.status === 'Accepted' || order.status === 'Preparing') {
+                statusLabel = '🟡 PREPARING';
+                statusClass = 'border-amber-200 bg-amber-50 text-amber-800';
+              } else if (order.status === 'Ready') {
+                statusLabel = '🟢 READY';
+                statusClass = 'border-emerald-200 bg-emerald-50 text-emerald-800';
+              } else if (order.status === 'Completed') {
+                statusLabel = '⚪ COMPLETED';
+                statusClass = 'border-gray-200 bg-gray-50 text-gray-800';
+              }
+
+              return (
+                <div
+                  key={order.id}
+                  className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between gap-4"
+                >
+                  <div className="space-y-3">
+                    {/* Header ID */}
+                    <div className="flex justify-between items-center">
+                      <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black border uppercase ${statusClass}`}>
+                        {statusLabel}
+                      </span>
+                      <span className="text-[10px] text-gray-400 font-bold">
+                        Received: {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+
+                    <div>
+                      <h3 className="text-base font-black text-qcommerce-black">{order.selected_option_name}</h3>
+                      <p className="text-[10px] text-gray-500 font-bold uppercase mt-0.5">Order ID: #{order.id}</p>
+                    </div>
+
+                    <div className="space-y-1 text-xs font-semibold text-gray-600">
+                      <p>Prep Tier: <span className="text-gray-800">Tier {order.prep_tier}</span></p>
+                      <p>Allergies: <span className="text-red-500 font-bold uppercase">{order.allergies.length > 0 ? order.allergies.join(", ") : "NONE"}</span></p>
+                      <p>Targets: <span className="text-gray-800">{order.target_protein_g}g P • {order.target_carbs_g}g C • {order.target_calories} kcal</span></p>
+                    </div>
+                  </div>
+
+                  {/* Actions footer */}
+                  <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-100">
+                    <Link
+                      to={`/food-maker/orders/${order.id}`}
+                      className="bg-gray-100 text-gray-800 text-[10px] font-extrabold px-3 py-2 rounded-xl hover:bg-gray-200 transition-colors"
+                    >
+                      View Recipe
+                    </Link>
+                    
+                    {order.status === 'Received' && (
+                      <button
+                        onClick={async () => {
+                          try {
+                            const res = await fetch(`http://127.0.0.1:8000/api/food-maker/orders/${order.id}/status`, {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ status: 'Accepted' })
+                            });
+                            if (res.ok) {
+                              setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: 'Accepted' } : o));
+                            }
+                          } catch (e) {
+                            console.error(e);
+                          }
+                        }}
+                        className="bg-red-500 text-white text-[10px] font-extrabold px-4 py-2 rounded-xl hover:bg-red-600 transition-colors"
+                      >
+                        Accept Order
+                      </button>
+                    )}
+
+                    {order.status === 'Accepted' && (
+                      <button
+                        onClick={async () => {
+                          try {
+                            const res = await fetch(`http://127.0.0.1:8000/api/food-maker/orders/${order.id}/status`, {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ status: 'Preparing' })
+                            });
+                            if (res.ok) {
+                              setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: 'Preparing' } : o));
+                            }
+                          } catch (e) {
+                            console.error(e);
+                          }
+                        }}
+                        className="bg-amber-500 text-white text-[10px] font-extrabold px-4 py-2 rounded-xl hover:bg-amber-600 transition-colors animate-pulse"
+                      >
+                        Start Preparation
+                      </button>
+                    )}
+
+                    {order.status === 'Preparing' && (
+                      <button
+                        onClick={async () => {
+                          try {
+                            const res = await fetch(`http://127.0.0.1:8000/api/food-maker/orders/${order.id}/status`, {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ status: 'Ready' })
+                            });
+                            if (res.ok) {
+                              setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: 'Ready' } : o));
+                            }
+                          } catch (e) {
+                            console.error(e);
+                          }
+                        }}
+                        className="bg-emerald-500 text-white text-[10px] font-extrabold px-4 py-2 rounded-xl hover:bg-emerald-600 transition-colors"
+                      >
+                        Mark Ready
+                      </button>
+                    )}
+
+                    {order.status === 'Ready' && (
+                      <button
+                        onClick={async () => {
+                          try {
+                            const res = await fetch(`http://127.0.0.1:8000/api/food-maker/orders/${order.id}/status`, {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ status: 'Completed' })
+                            });
+                            if (res.ok) {
+                              setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: 'Completed' } : o));
+                            }
+                          } catch (e) {
+                            console.error(e);
+                          }
+                        }}
+                        className="bg-qcommerce-black text-white text-[10px] font-extrabold px-4 py-2 rounded-xl hover:bg-gray-800 transition-colors"
+                      >
+                        Hand to Delivery
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+    </div>
+  );
+}
+
+export default FoodMakerDashboard;
