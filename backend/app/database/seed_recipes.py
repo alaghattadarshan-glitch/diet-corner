@@ -952,7 +952,7 @@ def seed_recipes():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
-    # Check if table exists
+    # Check if table exists and has rows
     try:
         cursor.execute("SELECT COUNT(*) FROM recipes")
         count = cursor.fetchone()[0]
@@ -964,19 +964,52 @@ def seed_recipes():
         
     print(f"Seeding {len(RECIPES_DATA)} Recipes into Knowledge Base...")
     
+    # Fetch ingredient macros to calculate recipe nutrition dynamically
+    cursor.execute("SELECT id, protein_per_100g, carbs_per_100g, fat_per_100g, calories_per_100g FROM ingredients")
+    ing_map = {}
+    for row in cursor.fetchall():
+        ing_map[row[0]] = {
+            "protein": row[1],
+            "carbs": row[2],
+            "fat": row[3],
+            "calories": row[4]
+        }
+        
     for r in RECIPES_DATA:
+        # Calculate standard recipe nutrition
+        cals, prot, carb, fat = 0.0, 0.0, 0.0, 0.0
+        for ing in r["ingredients"]:
+            ing_id = ing["ingredient_id"]
+            qty = ing["standard_quantity_g"]
+            if ing_id in ing_map:
+                cals += (ing_map[ing_id]["calories"] * qty / 100.0)
+                prot += (ing_map[ing_id]["protein"] * qty / 100.0)
+                carb += (ing_map[ing_id]["carbs"] * qty / 100.0)
+                fat += (ing_map[ing_id]["fat"] * qty / 100.0)
+                
+        nutrition = {
+            "calories": round(cals, 1),
+            "protein_g": round(prot, 1),
+            "carbs_g": round(carb, 1),
+            "fat_g": round(fat, 1)
+        }
+        
         ingredients_json = json.dumps(r["ingredients"])
         steps_json = json.dumps(r["preparation_steps"])
+        nutrition_json = json.dumps(nutrition)
+        
         cursor.execute(
             """
             INSERT INTO recipes (
                 id, name, meal_type, diet_type, prep_tier,
-                ingredients_json, preparation_steps_json, allergens, equipment
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ingredients_json, nutrition_json, preparation_steps_json, allergens, equipment,
+                cooking_time_minutes, serving_size, difficulty, tags, verified
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
             """,
             (
                 r["id"], r["name"], r["meal_type"], r["diet_type"], r["prep_tier"],
-                ingredients_json, steps_json, r["allergens"], r["equipment"]
+                ingredients_json, nutrition_json, steps_json, r["allergens"], r["equipment"],
+                20, "1 serving", "Easy", r["meal_type"]
             )
         )
         

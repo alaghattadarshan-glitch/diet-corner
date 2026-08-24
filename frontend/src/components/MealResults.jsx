@@ -125,9 +125,21 @@ function MealResults() {
                 </div>
 
                 {/* AI Explanation Layer */}
-                <div className="bg-emerald-50 bg-opacity-50 border border-emerald-100 rounded-xl p-3 flex items-start gap-2 text-xs text-diet-dark">
-                  <Sparkles size={14} className="text-yellow-500 shrink-0 mt-0.5" />
-                  <span className="font-semibold leading-relaxed">{opt.explanation}</span>
+                <div className="bg-emerald-50 bg-opacity-50 border border-emerald-100 rounded-xl p-3 flex flex-col gap-2 text-xs text-diet-dark">
+                  <div className="flex items-start gap-2">
+                    <Sparkles size={14} className="text-yellow-500 shrink-0 mt-0.5" />
+                    <span className="font-semibold leading-relaxed">{opt.explanation}</span>
+                  </div>
+                  {opt.explanation_detail && (
+                    <details className="mt-1 text-[10px] text-gray-500 bg-white p-2.5 rounded-lg border border-gray-150 cursor-pointer w-full">
+                      <summary className="font-bold text-diet-primary select-none outline-none">Why this meal? (Optimizer Details)</summary>
+                      <ul className="mt-1.5 space-y-1 pl-3.5 list-disc leading-relaxed font-semibold">
+                        {Object.entries(opt.explanation_detail).map(([key, desc]) => (
+                          <li key={key}>{desc}</li>
+                        ))}
+                      </ul>
+                    </details>
+                  )}
                 </div>
 
                 {/* Substitution Alert */}

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Sliders, HelpCircle, ShieldCheck } from 'lucide-react';
+import { Sliders, HelpCircle, ShieldCheck, X, User } from 'lucide-react';
 import CalorieCalculator from './CalorieCalculator';
 
 const PRESETS = {
@@ -34,6 +34,7 @@ function MacroForm() {
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showCalculator, setShowCalculator] = useState(false);
 
   // Handle preset URL parameter
   useEffect(() => {
@@ -120,18 +121,28 @@ function MacroForm() {
   };
 
   return (
-    <div className="grid md:grid-cols-5 gap-8 max-w-5xl mx-auto items-start">
+    <div className="max-w-2xl mx-auto space-y-6">
       
-      {/* Calorie & Protein Target Calculator */}
-      <div className="md:col-span-2">
-        <CalorieCalculator
-          onApplyCalorieTarget={(cals) => setCalories(cals)}
-          onApplyProteinTarget={(prot) => setProtein(prot)}
-        />
+      {/* Personalized Nutrition Profile Button Card */}
+      <div className="flex justify-between items-center bg-white/80 backdrop-blur-md border border-white/50 rounded-3xl p-5 shadow-sm">
+        <div className="space-y-1">
+          <span className="text-xs font-black text-gray-700 flex items-center gap-1.5">
+            <User size={16} className="text-diet-primary" />
+            <span>Personalized Nutrition Profile</span>
+          </span>
+          <p className="text-[10px] text-gray-400 font-bold">Use our calculator to estimate your daily macros and calories.</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowCalculator(true)}
+          className="px-4 py-2 bg-diet-light hover:bg-diet-primary hover:text-white text-diet-primary font-bold text-xs rounded-xl transition-all"
+        >
+          Calculate Targets
+        </button>
       </div>
 
       {/* Main Macro Builder Form */}
-      <div className="md:col-span-3 bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
       
       {/* Header Banner */}
       <div className="bg-diet-dark text-white p-6 md:p-8 space-y-2">
@@ -140,7 +151,7 @@ function MacroForm() {
           <span>Macro Target Builder</span>
         </h1>
         <p className="text-emerald-100 text-xs md:text-sm">
-          Define your targets. The PuLP linear programming engine will select ingredients andportion weights to match your goals.
+          Define your targets. The PuLP linear programming engine will select ingredients and portion weights to match your goals.
         </p>
       </div>
 
@@ -407,6 +418,32 @@ function MacroForm() {
 
       </form>
       </div>
+
+      {showCalculator && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="max-w-lg w-full max-h-[90vh] overflow-y-auto bg-white rounded-3xl shadow-2xl relative">
+            <button
+              type="button"
+              onClick={() => setShowCalculator(false)}
+              className="absolute top-4 right-4 p-1.5 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition-all z-10"
+            >
+              <X size={18} />
+            </button>
+            <div className="p-1">
+              <CalorieCalculator
+                onApplyCalorieTarget={(cals) => {
+                  setCalories(cals);
+                  setShowCalculator(false);
+                }}
+                onApplyProteinTarget={(prot) => {
+                  setProtein(prot);
+                  setShowCalculator(false);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -108,7 +108,16 @@ function CalorieCalculator({ onApplyCalorieTarget, onApplyProteinTarget }) {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to calculate calories.');
+        const errData = await response.json().catch(() => ({}));
+        let errMsg = 'Failed to calculate calories.';
+        if (errData && errData.detail) {
+          if (Array.isArray(errData.detail)) {
+            errMsg = errData.detail.map(d => `${d.loc.join('.')}: ${d.msg}`).join(', ');
+          } else {
+            errMsg = errData.detail;
+          }
+        }
+        throw new Error(errMsg);
       }
 
       const data = await response.json();

@@ -5,23 +5,30 @@ import { Cpu, HelpCircle, Layers, ArrowRight, ShieldCheck, Database, ListChecks,
 
 function DeveloperAiPanel() {
   const [logs, setLogs] = useState([]);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchLogs = async () => {
+    const loadData = async () => {
       try {
         const response = await fetch('http://127.0.0.1:8000/api/demo/ai-logs');
         if (response.ok) {
           const data = await response.json();
           setLogs(data.logs || []);
         }
+        
+        const statsRes = await fetch('http://127.0.0.1:8000/api/admin/ai-recipe/stats');
+        if (statsRes.ok) {
+          const statsData = await statsRes.json();
+          setStats(statsData);
+        }
       } catch (err) {
-        console.error("Error fetching AI logs:", err);
+        console.error("Error fetching AI logs/stats:", err);
       } finally {
         setLoading(false);
       }
     };
-    fetchLogs();
+    loadData();
   }, []);
 
   return (
@@ -37,6 +44,64 @@ function DeveloperAiPanel() {
           Detailed developer logs tracing the RAG retrieval, LLM Prompt, and Pydantic validation states.
         </p>
       </div>
+
+      {/* AI Recipe Quality stats panel */}
+      {stats && (
+        <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm space-y-4">
+          <h2 className="text-sm font-bold text-gray-700 uppercase">AI Recipe Evaluation Metrics</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div className="bg-gray-50 border border-gray-150 p-4 rounded-2xl">
+              <span className="text-2xl font-black text-gray-900 block">{stats.recipes_generated}</span>
+              <span className="text-[10px] text-gray-400 font-bold uppercase block">Recipes Generated</span>
+            </div>
+            <div className="bg-emerald-50 border border-emerald-150 p-4 rounded-2xl">
+              <span className="text-2xl font-black text-emerald-700 block">{stats.valid}</span>
+              <span className="text-[10px] text-emerald-600 font-bold uppercase block">Valid Recipes</span>
+            </div>
+            <div className="bg-red-50 border border-red-150 p-4 rounded-2xl">
+              <span className="text-2xl font-black text-red-700 block">{stats.rejected}</span>
+              <span className="text-[10px] text-red-600 font-bold uppercase block">Rejected Recipes</span>
+            </div>
+            <div className="bg-amber-50 border border-amber-150 p-4 rounded-2xl">
+              <span className="text-2xl font-black text-amber-700 block">{stats.fallback_rate}%</span>
+              <span className="text-[10px] text-amber-600 font-bold uppercase block">Fallback Rate</span>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4 pt-2">
+            <div className="space-y-2.5 text-xs font-semibold">
+              <span className="text-[10px] font-bold text-gray-400 block uppercase">AI Model Guard Compliance Metrics</span>
+              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                <span className="text-gray-500">Ingredient Accuracy</span>
+                <span className="font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">{stats.quality.ingredient_accuracy}%</span>
+              </div>
+              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                <span className="text-gray-500">Quantity Preservation</span>
+                <span className="font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">{stats.quality.quantity_preservation}%</span>
+              </div>
+              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                <span className="text-gray-500">Diet Compliance</span>
+                <span className="font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">{stats.quality.diet_compliance}%</span>
+              </div>
+            </div>
+            <div className="space-y-2.5 text-xs font-semibold">
+              <span className="text-[10px] font-bold text-gray-400 block uppercase">&nbsp;</span>
+              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                <span className="text-gray-500">Allergy Compliance</span>
+                <span className="font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">{stats.quality.allergy_compliance}%</span>
+              </div>
+              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                <span className="text-gray-500">Prep Tier Compliance</span>
+                <span className="font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">{stats.quality.prep_tier_compliance}%</span>
+              </div>
+              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                <span className="text-gray-500">Recipe Grounding Accuracy</span>
+                <span className="font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">{stats.quality.recipe_grounding}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tracer pipeline diagram */}
       <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm space-y-4">

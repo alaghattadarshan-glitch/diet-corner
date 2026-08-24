@@ -4,7 +4,7 @@ from typing import List, Optional, Dict, Any
 class MatchMealRequest(BaseModel):
     target_protein_g: float
     target_carbs_g: float
-    target_fat_g: float
+    target_fat_g: float = 0.0
     target_calories: float
     diet_type: str  # 'veg', 'non-veg', 'vegan'
     allergies: List[str]
@@ -13,6 +13,8 @@ class MatchMealRequest(BaseModel):
     min_ingredients: Optional[int] = 2
     max_ingredients: Optional[int] = 5
     notes: Optional[str] = ""
+    recent_ingredient_ids: Optional[List[str]] = None
+    preferred_ingredient_ids: Optional[List[str]] = None
 
 class SubstitutionDetail(BaseModel):
     original_item: str
@@ -40,6 +42,7 @@ class MealOption(BaseModel):
     replacement_item: Optional[str] = None
     similarity_score: Optional[float] = None
     recalculated: bool = False
+    explanation_detail: Optional[Dict[str, str]] = None
 
 class MatchMealResponse(BaseModel):
     options: List[MealOption]
@@ -48,7 +51,7 @@ class CreateOrderRequest(BaseModel):
     user_id: str
     target_protein_g: float
     target_carbs_g: float
-    target_fat_g: float
+    target_fat_g: float = 0.0
     target_calories: float
     diet_type: str
     allergies: List[str]
@@ -90,10 +93,18 @@ class SubscriptionPlan(BaseModel):
     day: str
     meal_name: str
     components: List[Dict[str, Any]]
+    status: str = "active"
+    target_protein_g: float = 40.0
+    target_carbs_g: float = 50.0
+    target_fat_g: float = 15.0
+    target_calories: float = 500.0
+    meal_slot: str = "Meal 1"
+    day_of_month: Optional[int] = None
 
 class SubscriptionResponse(BaseModel):
     subscription_id: str
     plan_type: str
+    meals_per_day: int = 1
     status: str
     schedule: List[SubscriptionPlan]
 
@@ -140,3 +151,31 @@ class CalorieCalculatorResponse(BaseModel):
     activity_multiplier: float
     maintenance_calories: float
     goals: CalorieGoals
+
+class CustomerProfileSaveRequest(BaseModel):
+    user_id: str = "demo_user"
+    height_cm: float
+    weight_kg: float
+    age: int
+    sex: str
+    activity_level: str
+    bmr: float
+    maintenance_calories: float
+    selected_goal: str
+    target_calories: float
+    protein_target_g: float
+    carbs_target_g: float
+    fat_target_g: float
+
+class CustomerPreferencesSaveRequest(BaseModel):
+    user_id: str = "demo_user"
+    diet_type: Optional[str] = "any"
+    spice_level: Optional[str] = "Medium"
+    salt_preference: Optional[str] = "Medium"
+    onion_preference: Optional[str] = "With Onion"
+    meal_types: Optional[str] = ""
+
+class MealFeedbackRequest(BaseModel):
+    taste_rating: int = Field(..., ge=1, le=5)
+    portion_rating: int = Field(..., ge=1, le=5)
+    would_order_again: int = Field(..., ge=0, le=1) # 1 = YES, 0 = NO

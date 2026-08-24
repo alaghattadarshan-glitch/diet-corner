@@ -26,6 +26,50 @@ def log_ai_activity(
         "details": details
     })
 
+from app.database.connection import get_db_connection
+from app.recipe.recipe_validator import validate_recipe_with_details
+
+def log_validation_to_db(
+    order_id: Optional[str],
+    recipe_id: Optional[str],
+    model_name: str,
+    attempt: int,
+    status: str,
+    checks: Dict[str, bool],
+    fallback_used: bool,
+    reason: str
+):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            INSERT INTO ai_recipe_validation_logs (
+                order_id, recipe_id, model_name, attempt_number, validation_status,
+                ingredient_check, quantity_check, diet_check, allergy_check, prep_tier_check,
+                fallback_used, failure_reason
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                order_id,
+                recipe_id,
+                model_name,
+                attempt,
+                status,
+                1 if checks.get("ingredients") else 0,
+                1 if checks.get("quantities") else 0,
+                1 if checks.get("diet") else 0,
+                1 if checks.get("allergies") else 0,
+                1 if checks.get("prep_tier") else 0,
+                1 if fallback_used else 0,
+                reason
+            )
+        )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Error logging validation: {e}")
+
 def generate_recipe_instructions(
     order_ingredients: List[Dict[str, Any]], # List of {"ingredient_id": "...", "name": "...", "weight_g": ...}
     diet_type: str,
@@ -35,7 +79,8 @@ def generate_recipe_instructions(
     substitution_applied: bool = False,
     original_item: Optional[str] = None,
     replacement_item: Optional[str] = None,
-    similarity_score: Optional[float] = None
+    similarity_score: Optional[float] = None,
+    order_id: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Constructs RAG prompt, gets structured recipe, validates, and returns JSON recipe.
@@ -59,6 +104,9 @@ def generate_recipe_instructions(
         })
         
     notes_list = [customer_notes] if customer_notes else []
+    
+    # Standard template fields
+    allergy_alerts = [f"CRITICAL ALLERGY ALERT: No {a.upper()} ingredients permitted." for a in allergies]
 
     # System instruction for AI JSON output
     system_instruction = (
@@ -110,60 +158,64 @@ def generate_recipe_instructions(
         prompt += f"\nSUBSTITUTION DETAILS:\n"
         prompt += f"- Swapped {original_item} with {replacement_item} (similarity: {similarity_score})\n"
 
-    # Try calling actual LLM if configured
-    llm_output = call_llm(prompt, system_instruction)
-    
-    if llm_output:
-        try:
-            # Clean JSON markdown syntax
-            clean_json = llm_output.strip()
-            if clean_json.startswith("```json"):
-                clean_json = clean_json[7:]
-            if clean_json.endswith("```"):
-                clean_json = clean_json[:-3]
-            clean_json = clean_json.strip()
+    # Try up to 2 LLM generation attempts
+    model_name = "Gemini API (Inference)"
+    for attempt in range(1, 3):
+        current_prompt = prompt
+        if attempt > 1:
+            current_prompt += f"\n\nWARNING: Your previous response was INVALID. Fix all mismatch errors. Ensure you match the quantities EXACTLY: {expected_ingredients_map}"
             
-            recipe_obj = StructuredRecipe(**json.loads(clean_json))
-            
-            # Run our strict safety validator
-            if validate_recipe_rules(recipe_obj, expected_ingredients_map, diet_type, prep_tier_limit, allergies):
-                log_ai_activity(
-                    recipe_name=recipe_title,
-                    retrieved_recipe_id=retrieved_id,
-                    model_name="Gemini API (Inference)",
-                    status="SUCCESS",
-                    fallback_used=False
-                )
-                return recipe_obj.dict()
-            else:
-                print("LLM generated output failed validation rules. Attempting one retry...")
-        except Exception as err:
-            print(f"Failed to parse LLM output: {err}. Attempting retry...")
-            
-        # Retry with extra strict request
-        retry_prompt = prompt + "\n\nWARNING: Your previous response violated one or more strict rules. Ensure you ONLY return expected ingredients and weights."
-        llm_output_retry = call_llm(retry_prompt, system_instruction)
-        if llm_output_retry:
+        llm_output = call_llm(current_prompt, system_instruction)
+        if llm_output:
             try:
-                clean_json_retry = llm_output_retry.strip()
-                if clean_json_retry.startswith("```json"):
-                    clean_json_retry = clean_json_retry[7:]
-                if clean_json_retry.endswith("```"):
-                    clean_json_retry = clean_json_retry[:-3]
-                clean_json_retry = clean_json_retry.strip()
+                # Clean JSON markdown syntax
+                clean_json = llm_output.strip()
+                if clean_json.startswith("```json"):
+                    clean_json = clean_json[7:]
+                if clean_json.endswith("```"):
+                    clean_json = clean_json[:-3]
+                clean_json = clean_json.strip()
                 
-                recipe_obj_retry = StructuredRecipe(**json.loads(clean_json_retry))
-                if validate_recipe_rules(recipe_obj_retry, expected_ingredients_map, diet_type, prep_tier_limit, allergies):
+                recipe_data = json.loads(clean_json)
+                recipe_obj = StructuredRecipe(**recipe_data)
+                
+                # Check validation details
+                val_res = validate_recipe_with_details(recipe_obj, expected_ingredients_map, diet_type, prep_tier_limit, allergies)
+                
+                log_validation_to_db(
+                    order_id=order_id,
+                    recipe_id=retrieved_id,
+                    model_name=model_name,
+                    attempt=attempt,
+                    status="PASS" if val_res["valid"] else "FAIL",
+                    checks=val_res["checks"],
+                    fallback_used=False,
+                    reason=val_res["reason"]
+                )
+                
+                if val_res["valid"]:
                     log_ai_activity(
                         recipe_name=recipe_title,
                         retrieved_recipe_id=retrieved_id,
-                        model_name="Gemini API (Inference)",
-                        status="SUCCESS ON RETRY",
+                        model_name=model_name,
+                        status="SUCCESS" if attempt == 1 else "SUCCESS ON RETRY",
                         fallback_used=False
                     )
-                    return recipe_obj_retry.dict()
-            except Exception as e:
-                print(f"Retry parsing also failed: {e}")
+                    return recipe_obj.dict()
+                else:
+                    print(f"Validation failed on attempt {attempt}: {val_res['reason']}")
+            except Exception as err:
+                print(f"Failed to parse LLM output on attempt {attempt}: {err}")
+                log_validation_to_db(
+                    order_id=order_id,
+                    recipe_id=retrieved_id,
+                    model_name=model_name,
+                    attempt=attempt,
+                    status="FAIL",
+                    checks={"ingredients": False, "quantities": False, "diet": False, "allergies": False, "prep_tier": False},
+                    fallback_used=False,
+                    reason=f"JSON/Pydantic Parsing error: {str(err)}"
+                )
 
     # --- FALLBACK / DETERMINISTIC GENERATOR ---
     # Construct a high-fidelity local structured recipe based on the grounding database recipe
@@ -174,14 +226,11 @@ def generate_recipe_instructions(
         # Ground steps to the database recipe but inject correct weights
         for step in base_recipe["preparation_steps"]:
             updated_step = step
-            # Replace placeholder weights with the actual weights computed by PuLP
             for name, weight in expected_ingredients_map.items():
-                # E.g. replace "Tofu" with "Tofu (180g)"
                 if name.lower() in step.lower() and str(weight) not in step:
                     updated_step = updated_step.replace(name, f"{name} ({weight}g)")
             fallback_steps.append(updated_step)
     else:
-        # Default combination instructions
         fallback_steps.append("Verify and inspect all incoming portioned ingredients.")
         for name, qty in expected_ingredients_map.items():
             fallback_steps.append(f"Prepare {name} and weigh exactly {qty}g.")
@@ -189,13 +238,8 @@ def generate_recipe_instructions(
         fallback_steps.append("Check for custom requirements: " + (customer_notes or "none"))
         fallback_steps.append("Complete final weight checks, seal container, and pack.")
 
-    # Incorporate customer preference notes directly into step list
     if customer_notes:
         fallback_steps.append(f"CUSTOMER REQUIREMENT ALERT: Apply note - '{customer_notes}'.")
-        
-    allergy_alerts = []
-    for allergy in allergies:
-        allergy_alerts.append(f"CRITICAL ALLERGY ALERT: No {allergy.upper()} ingredients permitted.")
 
     fallback_recipe = {
         "recipe_name": recipe_title,
@@ -227,6 +271,18 @@ def generate_recipe_instructions(
         status="AI API unavailable or validation failed — using verified recipe instructions",
         fallback_used=True,
         details="Generated clean output satisfying all Pydantic constraints deterministically."
+    )
+    
+    # Log the fallback usage
+    log_validation_to_db(
+        order_id=order_id,
+        recipe_id=retrieved_id,
+        model_name="Pretrained Local Grounding Template (Fallback Mode)",
+        attempt=3,
+        status="PASS",
+        checks={"ingredients": True, "quantities": True, "diet": True, "allergies": True, "prep_tier": True},
+        fallback_used=True,
+        reason="Hard fallback triggered and applied."
     )
     
     return fallback_recipe

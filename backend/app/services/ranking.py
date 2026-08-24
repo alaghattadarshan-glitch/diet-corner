@@ -17,12 +17,32 @@ def rank_meal_options(
 ) -> List[Dict[str, Any]]:
     """
     Ranks optimized meal options based on macro matches, user preferences,
-    and a repetition penalty for meals eaten recently.
+    feedback ratings, and a repetition penalty for meals eaten recently.
     """
     if recent_orders is None:
         recent_orders = MOCK_ORDER_HISTORY
 
     recent_meal_names = [o["meal_name"].lower() for o in recent_orders]
+
+    # Query feedback history for scoring adjustments
+    feedback_bonus = {}
+    feedback_penalty = {}
+    try:
+        from app.database.connection import get_db_connection
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT meal_name, taste_rating, would_order_again FROM meal_feedback")
+        for row in cursor.fetchall():
+            m_name = row[0].lower()
+            t_rate = row[1]
+            again = row[2]
+            if t_rate >= 4 or again == 1:
+                feedback_bonus[m_name] = feedback_bonus.get(m_name, 0.0) + 5.0
+            if t_rate <= 2 or again == 0:
+                feedback_penalty[m_name] = feedback_penalty.get(m_name, 0.0) + 15.0
+        conn.close()
+    except Exception as e:
+        print(f"Error querying feedback for ranking: {e}")
 
     ranked_options = []
     for opt in options:
@@ -59,8 +79,24 @@ def rank_meal_options(
             preference_score += 3.0
             ranking_reasons.append("Matches your custom preparation notes.")
 
+        # Apply database feedback bonuses/penalties
+        opt_name_lower = opt["name"].lower()
+        fb_bonus = 0.0
+        fb_penalty = 0.0
+        for m_name, bonus in feedback_bonus.items():
+            if m_name in opt_name_lower or opt_name_lower in m_name:
+                fb_bonus = max(fb_bonus, bonus)
+        for m_name, penalty in feedback_penalty.items():
+            if m_name in opt_name_lower or opt_name_lower in m_name:
+                fb_penalty = max(fb_penalty, penalty)
+                
+        if fb_bonus > 0.0:
+            ranking_reasons.append("Highly rated by you in previous orders.")
+        if fb_penalty > 0.0:
+            ranking_reasons.append("Lower priority based on your previous meal rating.")
+
         # Calculate final score using formula
-        final_score = max(0.0, min(100.0, macro_score + preference_score + prep_score - repetition_penalty))
+        final_score = max(0.0, min(100.0, macro_score + preference_score + prep_score + fb_bonus - repetition_penalty - fb_penalty))
         
         # Construct enhanced explanation
         final_explanation = opt["explanation"]

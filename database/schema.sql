@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
     plan_type TEXT NOT NULL, -- 'weekly', 'monthly'
+    meals_per_day INTEGER DEFAULT 1,
     start_date TEXT NOT NULL,
     status TEXT NOT NULL      -- 'active', 'paused', 'cancelled'
 );
@@ -64,9 +65,16 @@ CREATE TABLE IF NOT EXISTS subscriptions (
 CREATE TABLE IF NOT EXISTS subscription_meals (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     subscription_id TEXT NOT NULL,
-    day_of_week TEXT NOT NULL,
+    day_of_week TEXT, -- NULL for monthly plans
+    day_of_month INTEGER, -- NULL for weekly plans
+    meal_slot TEXT DEFAULT 'Meal 1',
     meal_name TEXT NOT NULL,
     components TEXT NOT NULL, -- JSON string representation of components
+    status TEXT DEFAULT 'active',
+    target_protein_g REAL DEFAULT 40.0,
+    target_carbs_g REAL DEFAULT 50.0,
+    target_fat_g REAL DEFAULT 15.0,
+    target_calories REAL DEFAULT 500.0,
     FOREIGN KEY (subscription_id) REFERENCES subscriptions(id) ON DELETE CASCADE
 );
 
@@ -77,9 +85,17 @@ CREATE TABLE IF NOT EXISTS recipes (
     diet_type TEXT NOT NULL, -- 'veg', 'non-veg', 'vegan'
     prep_tier REAL NOT NULL, -- 0.0, 1.0, 1.5
     ingredients_json TEXT NOT NULL,
+    nutrition_json TEXT, -- JSON string containing calories, protein_g, carbs_g, fat_g
     preparation_steps_json TEXT NOT NULL,
     allergens TEXT,
-    equipment TEXT
+    equipment TEXT,
+    cooking_time_minutes INTEGER DEFAULT 15,
+    serving_size TEXT DEFAULT '1 portion',
+    difficulty TEXT DEFAULT 'Easy',
+    tags TEXT,
+    verified INTEGER DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS generated_recipes (
@@ -96,5 +112,61 @@ CREATE TABLE IF NOT EXISTS food_maker_notifications (
     order_id TEXT NOT NULL,
     type TEXT NOT NULL,
     read INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS customer_profiles (
+    user_id TEXT PRIMARY KEY,
+    height_cm REAL,
+    weight_kg REAL,
+    age INTEGER,
+    sex TEXT,
+    activity_level TEXT,
+    bmr REAL,
+    maintenance_calories REAL,
+    selected_goal TEXT,
+    target_calories REAL,
+    protein_target_g REAL,
+    carbs_target_g REAL,
+    fat_target_g REAL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS customer_preferences (
+    user_id TEXT PRIMARY KEY,
+    diet_type TEXT, -- 'veg', 'non-veg', 'vegan'
+    spice_level TEXT DEFAULT 'Medium',
+    salt_preference TEXT DEFAULT 'Medium',
+    onion_preference TEXT DEFAULT 'With Onion',
+    meal_types TEXT, -- comma-separated (e.g. 'Bowl,Salad,Wrap')
+    FOREIGN KEY (user_id) REFERENCES customer_profiles(user_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS meal_feedback (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    meal_name TEXT NOT NULL,
+    taste_rating INTEGER NOT NULL,
+    portion_rating INTEGER NOT NULL,
+    would_order_again INTEGER NOT NULL, -- 1 for YES, 0 for NO
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS ai_recipe_validation_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id TEXT,
+    recipe_id TEXT,
+    model_name TEXT,
+    attempt_number INTEGER,
+    validation_status TEXT, -- 'PASS', 'FAIL'
+    ingredient_check INTEGER, -- 1/0
+    quantity_check INTEGER, -- 1/0
+    diet_check INTEGER, -- 1/0
+    allergy_check INTEGER, -- 1/0
+    prep_tier_check INTEGER, -- 1/0
+    fallback_used INTEGER, -- 1/0
+    failure_reason TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

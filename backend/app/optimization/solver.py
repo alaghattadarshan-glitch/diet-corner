@@ -1,9 +1,16 @@
-# backend/app/optimization/solver.py
-
 import pulp
 from typing import List, Dict, Any, Tuple, Optional
 from app.models.schemas import MatchMealRequest, MealOption, SubstitutionDetail
 from app.optimization.substitution import find_best_substitution
+
+SOLVER_WEIGHTS = {
+    "nutrition_deviation": 1.0,
+    "cost_penalty": 0.20,
+    "prep_penalty": 0.15,
+    "availability_penalty": 0.15,
+    "repetition_penalty": 0.10,
+    "preference_weight": 0.10
+}
 
 def run_pulp_optimization(
     ingredients: List[Dict[str, Any]],
@@ -89,8 +96,35 @@ def run_pulp_optimization(
     prob += pulp.lpSum([ y[ing_id] for ing_id in y ]) <= max_ingredients
     prob += pulp.lpSum([ y[ing_id] for ing_id in y ]) >= min_ingredients
 
-    # Objective: Minimize weighted sum of absolute deviations
-    prob += 5.0 * (dp_pos + dp_neg) + 2.0 * (dc_pos + dc_neg) + 3.0 * (df_pos + df_neg) + 0.5 * (dcal_pos + dcal_neg)
+    # Enforce non-veg inclusion if diet_type is non-veg
+    non_veg_candidates = [ing["id"] for ing in ingredients if ing["diet_type"] == "non-veg" and ing["id"] in y]
+    if request.diet_type == "non-veg" and non_veg_candidates:
+        prob += pulp.lpSum([ y[ing_id] for ing_id in non_veg_candidates ]) >= 1
+
+    # Configurable objective terms
+    nutrition_term = 5.0 * (dp_pos + dp_neg) + 2.0 * (dc_pos + dc_neg) + 3.0 * (df_pos + df_neg) + 0.5 * (dcal_pos + dcal_neg)
+    cost_term = achieved_price
+    prep_term = pulp.lpSum([ ing["prep_tier"] * y[ing_id] for ing in ingredients if ing["id"] in y ])
+    
+    # Stock availability term: penalize using ingredients with low stock
+    availability_term = pulp.lpSum([ (1000.0 / (ing["stock_quantity_g"] + 100.0)) * y[ing_id] for ing in ingredients if ing["id"] in y ])
+    
+    # Repetition term: penalize recently used ingredients
+    recent_ids = request.recent_ingredient_ids if (hasattr(request, "recent_ingredient_ids") and request.recent_ingredient_ids) else []
+    repetition_term = pulp.lpSum([ 10.0 * y[ing_id] for ing_id in y if ing_id in recent_ids ])
+    
+    # Preference term: bonus (negative penalty) for preferred ingredients
+    preferred_ids = request.preferred_ingredient_ids if (hasattr(request, "preferred_ingredient_ids") and request.preferred_ingredient_ids) else []
+    preference_term = pulp.lpSum([ -5.0 * y[ing_id] for ing_id in y if ing_id in preferred_ids ])
+
+    prob += (
+        SOLVER_WEIGHTS["nutrition_deviation"] * nutrition_term +
+        SOLVER_WEIGHTS["cost_penalty"] * cost_term +
+        SOLVER_WEIGHTS["prep_penalty"] * prep_term +
+        SOLVER_WEIGHTS["availability_penalty"] * availability_term +
+        SOLVER_WEIGHTS["repetition_penalty"] * repetition_term +
+        SOLVER_WEIGHTS["preference_weight"] * preference_term
+    )
 
     # Solve
     solver = pulp.PULP_CBC_CMD(msg=False)
@@ -198,33 +232,46 @@ def optimize_meal(
         sub_similarity_score = None
         recalculated = False
 
-        if out_of_stock_chosen:
+        forced_ids = []
+        loop_count = 0
+        while out_of_stock_chosen and loop_count < 5:
+            loop_count += 1
             oos_id = out_of_stock_chosen[0]
             oos_ing = out_of_stock_map[oos_id]
             
             sub_res = find_best_substitution(oos_ing, in_stock_candidates, request.diet_type, request.allergies)
             if sub_res:
                 substitution_applied = True
-                original_item_name = oos_ing["name"]
-                replacement_item_name = sub_res["replacement"]
-                sub_similarity_score = sub_res["similarity_score"]
+                if not original_item_name:
+                    original_item_name = oos_ing["name"]
+                    replacement_item_name = sub_res["replacement"]
+                    sub_similarity_score = sub_res["similarity_score"]
                 
-                # RE-RUN SOLVER: Remove the out-of-stock item, force the replacement
-                re_run_ingredients = [ing for ing in candidates if ing["id"] != oos_id]
+                # Remove the out-of-stock item from candidate pool
+                solver_ingredients = [ing for ing in solver_ingredients if ing["id"] != oos_id]
+                forced_ids.append(sub_res["replacement_id"])
+                
+                # RE-RUN SOLVER: force the replacements
                 weights, obj_val = run_pulp_optimization(
-                    re_run_ingredients, 
+                    solver_ingredients, 
                     request, 
                     exclude_ingredient_ids=excluded_primary_ids,
-                    force_ingredient_ids=[sub_res["replacement_id"]]
+                    force_ingredient_ids=forced_ids
                 )
                 recalculated = True
             else:
                 weights, obj_val = run_pulp_optimization(
                     in_stock_candidates, 
                     request, 
-                    exclude_ingredient_ids=excluded_primary_ids
+                    exclude_ingredient_ids=excluded_primary_ids,
+                    force_ingredient_ids=forced_ids if forced_ids else None
                 )
                 recalculated = True
+                break
+                
+            if not weights:
+                break
+            out_of_stock_chosen = [ing_id for ing_id in weights if ing_id in out_of_stock_map]
                 
         if not weights:
             continue
@@ -321,6 +368,17 @@ def optimize_meal(
 
         explanation_str = "Selected because it " + ", and ".join(explanations) + "."
 
+        explanation_detail = {
+            "protein": f"Protein target within {round(prot_diff, 1)}g deviation (Achieved: {round(total_protein, 1)}g vs Target: {request.target_protein_g}g)" if prot_diff < 5.0 else f"Protein deviation of {round(prot_diff, 1)}g",
+            "carbs": f"Carbohydrate target within {round(carb_diff, 1)}g deviation (Achieved: {round(total_carbs, 1)}g vs Target: {request.target_carbs_g}g)" if carb_diff < 5.0 else f"Carbs deviation of {round(carb_diff, 1)}g",
+            "fat": f"Fat target within {round(fat_diff, 1)}g deviation (Achieved: {round(total_fat, 1)}g vs Target: {request.target_fat_g}g)",
+            "calories": f"Calories within {round(cal_diff, 1)} kcal (Achieved: {round(total_calories, 0)} kcal vs Target: {request.target_calories} kcal)",
+            "budget": f"Under budget: ₹{round(total_price, 2)} (Budget: ₹{request.budget})" if total_price <= request.budget else f"Exceeds budget: ₹{round(total_price, 2)} (Budget: ₹{request.budget})",
+            "inventory": "All items substituted cleanly and portioned based on available stock" if substitution_applied else "All ingredients in stock inside the darkstore warehouse",
+            "prep": f"Prep tier is Tier {max_prep_tier} (requires less than {max_prep_time} mins prep time)",
+            "personalization": "Personalized based on preferred meal ingredients and ratings signals" if request.preferred_ingredient_ids else "Standard optimization mapping based on targets"
+        }
+
         main_proteins = [c["name"].replace("Air-Fried ", "").replace("Steamed ", "").replace("Boiled ", "").replace("Fresh ", "") 
                          for c in components if c["ingredient_id"] in ["chicken_breast", "tofu", "paneer", "boiled_egg", "whey_protein", "chickpeas", "rajma"]]
         main_grains = [c["name"].replace("Steamed ", "").replace("Quick ", "") for c in components if c["ingredient_id"] in ["brown_rice", "quinoa", "rolled_oats"]]
@@ -350,7 +408,8 @@ def optimize_meal(
             "original_item": original_item_name,
             "replacement_item": replacement_item_name,
             "similarity_score": sub_similarity_score,
-            "recalculated": recalculated
+            "recalculated": recalculated,
+            "explanation_detail": explanation_detail
         })
 
     return options

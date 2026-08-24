@@ -24,66 +24,82 @@ class StructuredRecipe(BaseModel):
     substitutions: List[RecipeSubstitution]
     final_checklist: List[str]
 
-def validate_recipe_rules(
-    recipe: StructuredRecipe,
+def validate_recipe_with_details(
+    recipe: Any,
     expected_ingredients: Dict[str, float], # name -> weight_g
     diet_type: str,
     prep_tier_limit: float,
     allergies: List[str]
-) -> bool:
+) -> Dict[str, Any]:
     """
     Validates that the AI-generated recipe strictly follows nutrition and safety guidelines.
-    Returns True if valid, False if it violates any rule.
+    Returns a dict with verification checks.
     """
+    res = {
+        "valid": False,
+        "checks": {
+            "ingredients": False,
+            "quantities": False,
+            "diet": False,
+            "allergies": False,
+            "prep_tier": False
+        },
+        "reason": ""
+    }
+    
     try:
-        # Rule 1: No extra/unwanted ingredients
+        # Convert dict to model if needed
+        if isinstance(recipe, dict):
+            recipe = StructuredRecipe(**recipe)
+            
+        # 1. Ingredient list check (no extra, no missing)
         generated_names = {i.name.lower().strip() for i in recipe.ingredients}
         expected_names = {name.lower().strip() for name in expected_ingredients.keys()}
         
-        # Check if AI added extra ingredients
         if not generated_names.issubset(expected_names):
-            print(f"Validation FAILED: AI added extra ingredients: {generated_names - expected_names}")
-            return False
-            
-        # Check if AI removed expected ingredients
+            res["reason"] = f"AI added extra ingredients: {generated_names - expected_names}"
+            return res
         if not expected_names.issubset(generated_names):
-            print(f"Validation FAILED: AI missing ingredients: {expected_names - generated_names}")
-            return False
+            res["reason"] = f"AI missing expected ingredients: {expected_names - generated_names}"
+            return res
+        res["checks"]["ingredients"] = True
 
-        # Rule 2: Quantities must match the PuLP output EXACTLY (within a small float tolerance)
+        # 2. Quantities check (exact match with PuLP output within tolerance)
         for i in recipe.ingredients:
             name_key = next((k for k in expected_ingredients if k.lower().strip() == i.name.lower().strip()), None)
             if not name_key:
-                return False
+                res["reason"] = f"Ingredient {i.name} not found in expected list."
+                return res
             expected_weight = expected_ingredients[name_key]
             if abs(i.quantity_g - expected_weight) > 0.5:
-                print(f"Validation FAILED: Weight mismatch for {i.name}. Expected {expected_weight}g, got {i.quantity_g}g")
-                return False
+                res["reason"] = f"Quantity mismatch for {i.name}. Expected {expected_weight}g, got {i.quantity_g}g"
+                return res
+        res["checks"]["quantities"] = True
 
-        # Rule 3: Diet validation
-        # Veg/Vegan meals cannot contain meat
+        # 3. Diet validation
         meat_terms = ["chicken", "fish", "mutton", "egg"] if diet_type == "vegan" else ["chicken", "fish", "mutton"]
         if diet_type in ["vegan", "veg"]:
             for name in generated_names:
                 if any(term in name for term in meat_terms):
-                    print(f"Validation FAILED: Meat ingredient '{name}' found in {diet_type} recipe.")
-                    return False
+                    res["reason"] = f"Diet type violation: {name} contains meat in {diet_type} plan"
+                    return res
+        res["checks"]["diet"] = True
 
-        # Rule 4: Allergy validation
-        # Recipe ingredients must not contain active allergens
+        # 4. Allergy validation
         allergies_set = {a.lower().strip() for a in allergies}
         for name in generated_names:
             if "dairy" in allergies_set and any(term in name for term in ["paneer", "milk", "yogurt", "cheese", "whey"]):
-                print(f"Validation FAILED: Dairy allergy violation in ingredient: {name}")
-                return False
+                res["reason"] = f"Dairy allergen detected in ingredient: {name}"
+                return res
             if "nuts" in allergies_set and any(term in name for term in ["almond", "peanut", "cashew", "walnut"]):
-                print(f"Validation FAILED: Nut allergy violation in ingredient: {name}")
-                return False
+                res["reason"] = f"Nut allergen detected in ingredient: {name}"
+                return res
             if "eggs" in allergies_set and "egg" in name:
-                print(f"Validation FAILED: Egg allergy violation in ingredient: {name}")
-                return False
+                res["reason"] = f"Egg allergen detected in ingredient: {name}"
+                return res
+        res["checks"]["allergies"] = True
 
-        # Rule 5: Prep tier validation
+        # 5. Prep tier validation
         recipe_tier_str = recipe.prep_tier.lower()
         recipe_tier = 0.0
         if "1.5" in recipe_tier_str:
@@ -92,10 +108,23 @@ def validate_recipe_rules(
             recipe_tier = 1.0
             
         if recipe_tier > prep_tier_limit:
-            print(f"Validation FAILED: Prep tier limit exceeded. Limit: {prep_tier_limit}, Got: {recipe_tier}")
-            return False
-
-        return True
+            res["reason"] = f"Prep tier limit exceeded. Limit: {prep_tier_limit}, Got: {recipe_tier}"
+            return res
+        res["checks"]["prep_tier"] = True
+        
+        # If all checks passed, it's valid
+        res["valid"] = True
+        return res
     except Exception as e:
-        print(f"Validation error: {e}")
-        return False
+        res["reason"] = f"Validation exception: {str(e)}"
+        return res
+
+def validate_recipe_rules(
+    recipe: StructuredRecipe,
+    expected_ingredients: Dict[str, float], # name -> weight_g
+    diet_type: str,
+    prep_tier_limit: float,
+    allergies: List[str]
+) -> bool:
+    res = validate_recipe_with_details(recipe, expected_ingredients, diet_type, prep_tier_limit, allergies)
+    return res["valid"]
