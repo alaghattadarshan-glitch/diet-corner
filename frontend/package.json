@@ -8,6 +8,8 @@
     "dev:customer": "vite --config vite.config.js --port 5173",
     "dev:operations": "vite --config vite.operations.config.js --port 5174",
     "build": "vite build && vite build --config vite.operations.config.js",
+    "build:customer": "vite build --config vite.config.js --outDir dist-customer",
+    "build:operations": "vite build --config vite.operations.config.js --outDir dist-operations",
     "lint": "oxlint",
     "preview": "vite preview"
   },
