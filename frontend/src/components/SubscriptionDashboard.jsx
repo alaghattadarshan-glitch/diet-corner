@@ -191,26 +191,26 @@ function SubscriptionDashboard() {
   const avgDailyCalories = activeMeals.length ? Math.round(totalWeeklyCalories / activeMeals.length) : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-sans text-gray-800">
       
       {/* Top Tab Navigation */}
-      <div className="flex border-b border-gray-200">
+      <div className="flex border border-gray-200 bg-white rounded-2xl p-1.5 shadow-xs">
         <button
           onClick={() => setActiveTab('user')}
-          className={`flex-1 py-4 text-center font-extrabold text-sm border-b-2 transition-all ${
+          className={`flex-1 py-3 text-center font-bold text-xs rounded-xl transition-all uppercase tracking-wider ${
             activeTab === 'user'
-              ? 'border-diet-primary text-diet-primary bg-emerald-50 bg-opacity-35'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
+              ? 'bg-[#6D28D9] text-white shadow-sm'
+              : 'text-[#374151] hover:text-[#6D28D9] hover:bg-[#F3E8FF]'
           }`}
         >
           📅 Customer Meal Schedule
         </button>
         <button
           onClick={() => setActiveTab('operations')}
-          className={`flex-1 py-4 text-center font-extrabold text-sm border-b-2 transition-all ${
+          className={`flex-1 py-3 text-center font-bold text-xs rounded-xl transition-all uppercase tracking-wider ${
             activeTab === 'operations'
-              ? 'border-diet-primary text-diet-primary bg-emerald-50 bg-opacity-35'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
+              ? 'bg-[#6D28D9] text-white shadow-sm'
+              : 'text-[#374151] hover:text-[#6D28D9] hover:bg-[#F3E8FF]'
           }`}
         >
           📈 Operations & Forecast Dashboard
@@ -222,18 +222,18 @@ function SubscriptionDashboard() {
         <div className="space-y-6">
           
           {/* Plan & Frequency Selection Controls */}
-          <div className="bg-white/80 backdrop-blur-md border border-white/50 rounded-3xl p-6 shadow-md flex flex-wrap gap-6 items-center justify-between">
+          <div className="bg-white rounded-3xl p-6 border border-gray-200 card-shadow flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div className="flex flex-wrap gap-6 items-center">
               <div className="space-y-1.5">
-                <span className="text-[10px] font-black text-gray-400 uppercase block tracking-wider">Plan Duration</span>
+                <span className="text-[10px] font-black text-[#6B7280] uppercase block tracking-wider">Plan Duration</span>
                 <div className="flex gap-2">
                   <button
                     onClick={() => {
                       setPlanType('weekly');
                       fetchSchedule('weekly', mealsPerDay);
                     }}
-                    className={`px-4 py-2 text-xs font-bold rounded-xl border transition-all ${
-                      planType === 'weekly' ? 'bg-diet-primary text-white border-diet-primary shadow-sm' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                    className={`px-4 py-2 text-xs font-bold rounded-xl border transition-all uppercase tracking-wider ${
+                      planType === 'weekly' ? 'bg-[#6D28D9] text-white border-[#6D28D9] shadow-xs' : 'bg-white text-[#374151] border-gray-200 hover:bg-gray-50'
                     }`}
                   >
                     Weekly Plan
@@ -243,8 +243,8 @@ function SubscriptionDashboard() {
                       setPlanType('monthly');
                       fetchSchedule('monthly', mealsPerDay);
                     }}
-                    className={`px-4 py-2 text-xs font-bold rounded-xl border transition-all ${
-                      planType === 'monthly' ? 'bg-diet-primary text-white border-diet-primary shadow-sm' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                    className={`px-4 py-2 text-xs font-bold rounded-xl border transition-all uppercase tracking-wider ${
+                      planType === 'monthly' ? 'bg-[#6D28D9] text-white border-[#6D28D9] shadow-xs' : 'bg-white text-[#374151] border-gray-200 hover:bg-gray-50'
                     }`}
                   >
                     Monthly Plan
@@ -253,7 +253,7 @@ function SubscriptionDashboard() {
               </div>
 
               <div className="space-y-1.5">
-                <span className="text-[10px] font-black text-gray-400 uppercase block tracking-wider">Meals Per Day (Frequency)</span>
+                <span className="text-[10px] font-black text-[#6B7280] uppercase block tracking-wider">Meals Per Day (Frequency)</span>
                 <div className="flex gap-2">
                   {[1, 2, 3].map((f) => (
                     <button
@@ -262,8 +262,8 @@ function SubscriptionDashboard() {
                         setMealsPerDay(f);
                         fetchSchedule(planType, f);
                       }}
-                      className={`px-4 py-2 text-xs font-bold rounded-xl border transition-all ${
-                        mealsPerDay === f ? 'bg-diet-primary text-white border-diet-primary shadow-sm' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                      className={`px-4 py-2 text-xs font-bold rounded-xl border transition-all uppercase tracking-wider ${
+                        mealsPerDay === f ? 'bg-[#6D28D9] text-white border-[#6D28D9] shadow-xs' : 'bg-white text-[#374151] border-gray-200 hover:bg-gray-50'
                       }`}
                     >
                       {f} Time{f > 1 ? 's' : ''} a Day
@@ -273,11 +273,11 @@ function SubscriptionDashboard() {
               </div>
             </div>
             
-            <div className="text-right">
+            <div className="text-left lg:text-right">
               <span className="text-[10px] text-gray-400 font-bold block uppercase tracking-wider">Subscription Rate</span>
-              <span className="text-xl font-black text-qcommerce-black">
+              <span className="text-xl font-black text-gray-900">
                 ₹{planType === 'weekly' ? (1749 * mealsPerDay) : (6499 * mealsPerDay)}
-                <span className="text-xs font-normal text-gray-400"> / {planType === 'weekly' ? 'week' : 'month'}</span>
+                <span className="text-xs font-medium text-gray-400"> / {planType === 'weekly' ? 'week' : 'month'}</span>
               </span>
             </div>
           </div>
@@ -285,9 +285,9 @@ function SubscriptionDashboard() {
           {/* Weekly Rollup Visualizer Widget */}
           <div className="grid md:grid-cols-3 gap-6">
             
-            <div className="bg-white/80 backdrop-blur-md border border-white/50 rounded-3xl p-6 shadow-md space-y-4">
-              <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-                <TrendingUp size={14} className="text-diet-primary" />
+            <div className="bg-white rounded-3xl p-6 border border-gray-150 card-shadow space-y-4">
+              <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                <TrendingUp size={14} className="text-brand-primary" />
                 <span>Plan Rollup (Avg per Meal)</span>
               </h4>
               <div className="grid grid-cols-3 gap-2 text-center">
@@ -296,22 +296,22 @@ function SubscriptionDashboard() {
                   <span className="text-[9px] text-gray-400 font-bold uppercase">Avg Kcal</span>
                 </div>
                 <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-100">
-                  <span className="block text-xs font-black text-emerald-600">{avgDailyProtein}g</span>
+                  <span className="block text-xs font-black text-brand-primary">{avgDailyProtein}g</span>
                   <span className="text-[9px] text-gray-400 font-bold uppercase">Avg Prot</span>
                 </div>
                 <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-100">
-                  <span className="block text-xs font-black text-blue-600">{avgDailyCarbs}g</span>
+                  <span className="block text-xs font-black text-brand-primary">{avgDailyCarbs}g</span>
                   <span className="text-[9px] text-gray-400 font-bold uppercase">Avg Carb</span>
                 </div>
               </div>
               <p className="text-[10px] text-gray-400 font-bold text-center">
-                Total Plan Calories: <span className="text-gray-600">{totalWeeklyCalories} kcal</span>
+                Total Plan Calories: <span className="text-gray-600 font-black">{totalWeeklyCalories} kcal</span>
               </p>
             </div>
 
-            {/* Premium CSS Chart */}
-            <div className="bg-white/80 backdrop-blur-md border border-white/50 rounded-3xl p-6 shadow-md md:col-span-2 space-y-3">
-              <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Daily Target Distribution</h4>
+            {/* CSS Chart */}
+            <div className="bg-white rounded-3xl p-6 border border-gray-150 card-shadow md:col-span-2 space-y-3">
+              <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Daily Target Distribution</h4>
               <div className="flex items-end justify-between h-20 px-2 pt-2 border-b border-gray-100 overflow-x-auto gap-2">
                 {schedule.map((item, idx) => {
                   const maxVal = 600;
@@ -322,15 +322,15 @@ function SubscriptionDashboard() {
                       <div className="relative w-full flex justify-center h-12">
                         <div 
                           style={{ height: `${isInactive ? 5 : pct}%` }}
-                          className={`w-3 rounded-t-md transition-all duration-500 ${
-                            isInactive ? 'bg-gray-200' : 'bg-gradient-to-t from-emerald-400 to-diet-primary'
+                          className={`w-2.5 rounded-t-md transition-all duration-500 ${
+                            isInactive ? 'bg-gray-200' : 'bg-gradient-to-t from-brand-secondary to-brand-primary'
                           }`}
                         />
-                        <div className="absolute bottom-full mb-1 hidden group-hover:block bg-qcommerce-black text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-lg z-10 whitespace-nowrap">
+                        <div className="absolute bottom-full mb-1 hidden group-hover:block bg-gray-900 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow-lg z-10 whitespace-nowrap">
                           {isInactive ? 'Inactive' : `${item.target_calories} kcal (${item.meal_slot})`}
                         </div>
                       </div>
-                      <span className="text-[8px] font-bold text-gray-400">{item.day.substring(0, 5)}</span>
+                      <span className="text-[8px] font-black text-gray-400 uppercase">{item.day.substring(0, 3)}</span>
                     </div>
                   );
                 })}
@@ -341,8 +341,8 @@ function SubscriptionDashboard() {
 
           {/* Weekly Planner Cards */}
           <div className="space-y-4">
-            <h3 className="text-lg font-bold text-qcommerce-black flex items-center gap-2">
-              <Calendar className="text-diet-primary" size={20} />
+            <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider flex items-center gap-2">
+              <Calendar className="text-brand-primary" size={16} />
               <span>Rotation Planner</span>
             </h3>
             
@@ -360,33 +360,33 @@ function SubscriptionDashboard() {
                   return (
                     <div 
                       key={idx} 
-                      className={`bg-white/90 backdrop-blur-sm border rounded-2xl p-5 shadow-md space-y-4 flex flex-col justify-between hover:shadow-xl transition-all duration-300 ${
-                        isInactive ? 'border-gray-200 opacity-60 bg-gray-50' : 'border-white/50'
+                      className={`bg-white border rounded-3xl p-5 card-shadow space-y-4 flex flex-col justify-between hover:-translate-y-0.5 transition-brand ${
+                        isInactive ? 'border-gray-200 opacity-60 bg-gray-50' : 'border-gray-150'
                       }`}
                     >
                       <div className="space-y-2">
                         <div className="flex justify-between items-start">
                           <div className="space-y-0.5">
-                            <span className="text-[10px] uppercase font-black text-gray-700 block">{item.day}</span>
-                            <span className="bg-gray-100 text-gray-500 text-[8px] font-black uppercase px-2 py-0.5 rounded-full block w-fit border border-gray-150">
+                            <span className="text-[10px] uppercase font-black text-gray-900 block tracking-wider">{item.day}</span>
+                            <span className="bg-gray-100 text-gray-400 text-[8px] font-black uppercase px-2 py-0.5 rounded-md block w-fit border border-gray-150">
                               {item.meal_slot}
                             </span>
                           </div>
                           {isSkipped && (
-                            <span className="bg-red-100 text-red-800 text-[8px] font-black uppercase px-2 py-0.5 rounded-full">
+                            <span className="bg-red-50 text-red-700 border border-red-100 text-[8px] font-black uppercase px-2 py-0.5 rounded-full">
                               Skipped
                             </span>
                           )}
                           {isPaused && (
-                            <span className="bg-amber-100 text-amber-800 text-[8px] font-black uppercase px-2 py-0.5 rounded-full">
+                            <span className="bg-amber-50 text-amber-700 border border-amber-200 text-[8px] font-black uppercase px-2 py-0.5 rounded-full">
                               Paused
                             </span>
                           )}
                         </div>
 
                         {isEditing ? (
-                          <div className="space-y-2 bg-gray-50 p-3 rounded-xl border border-gray-150">
-                            <span className="text-[9px] font-bold text-gray-400 block uppercase">Edit Targets</span>
+                          <div className="space-y-2 bg-gray-50 p-3 rounded-2xl border border-gray-200">
+                            <span className="text-[9px] font-black text-gray-400 block uppercase">Edit Targets</span>
                             <div className="grid grid-cols-2 gap-2 text-[10px]">
                               <div>
                                 <label className="block text-gray-400 font-bold mb-0.5">Protein (g)</label>
@@ -394,7 +394,7 @@ function SubscriptionDashboard() {
                                   type="number"
                                   value={editForm.target_protein_g}
                                   onChange={(e) => setEditForm({ ...editForm, target_protein_g: e.target.value })}
-                                  className="w-full bg-white border border-gray-200 rounded px-1.5 py-0.5 font-bold"
+                                  className="w-full bg-white border border-gray-200 rounded-lg px-1.5 py-0.5 font-bold"
                                 />
                               </div>
                               <div>
@@ -403,7 +403,7 @@ function SubscriptionDashboard() {
                                   type="number"
                                   value={editForm.target_carbs_g}
                                   onChange={(e) => setEditForm({ ...editForm, target_carbs_g: e.target.value })}
-                                  className="w-full bg-white border border-gray-200 rounded px-1.5 py-0.5 font-bold"
+                                  className="w-full bg-white border border-gray-200 rounded-lg px-1.5 py-0.5 font-bold"
                                 />
                               </div>
                               <div>
@@ -412,20 +412,20 @@ function SubscriptionDashboard() {
                                   type="number"
                                   value={editForm.target_calories}
                                   onChange={(e) => setEditForm({ ...editForm, target_calories: e.target.value })}
-                                  className="w-full bg-white border border-gray-200 rounded px-1.5 py-0.5 font-bold"
+                                  className="w-full bg-white border border-gray-200 rounded-lg px-1.5 py-0.5 font-bold"
                                 />
                               </div>
                             </div>
                             <div className="flex gap-2 pt-1">
                               <button
                                 onClick={() => saveMacros(item.day, item.meal_slot)}
-                                className="flex-1 py-1 bg-diet-primary hover:bg-emerald-600 text-white font-bold rounded flex items-center justify-center gap-0.5 text-[9px]"
+                                className="flex-1 py-1.5 bg-brand-primary hover:bg-brand-secondary text-white font-black rounded-lg flex items-center justify-center gap-0.5 text-[9px]"
                               >
                                 <Check size={8} /> Save
                               </button>
                               <button
                                 onClick={() => setEditingDay(null)}
-                                className="flex-1 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded flex items-center justify-center gap-0.5 text-[9px]"
+                                className="flex-1 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-lg flex items-center justify-center gap-0.5 text-[9px]"
                               >
                                 <X size={8} /> Cancel
                               </button>
@@ -433,19 +433,19 @@ function SubscriptionDashboard() {
                           </div>
                         ) : (
                           <>
-                            <h4 className="text-xs font-extrabold text-gray-800 leading-snug">
+                            <h4 className="text-xs font-black text-gray-800 leading-snug">
                               {isInactive ? 'Meal Delivery Paused / Skipped' : item.meal_name}
                             </h4>
 
                             {!isInactive && (
                               <div className="flex flex-wrap gap-1.5 pt-1">
-                                <span className="bg-emerald-50 text-diet-primary text-[9px] px-2 py-0.5 rounded-full font-bold border border-emerald-100">
+                                <span className="bg-brand-soft text-brand-primary text-[9px] px-2 py-0.5 rounded-full font-black border border-brand-soft">
                                   P: {item.target_protein_g}g
                                 </span>
-                                <span className="bg-blue-50 text-blue-700 text-[9px] px-2 py-0.5 rounded-full font-bold border border-blue-100">
+                                <span className="bg-brand-soft text-brand-primary text-[9px] px-2 py-0.5 rounded-full font-black border border-brand-soft">
                                   C: {item.target_carbs_g}g
                                 </span>
-                                <span className="bg-gray-50 text-gray-600 text-[9px] px-2 py-0.5 rounded-full font-bold border border-gray-100">
+                                <span className="bg-gray-50 text-gray-600 text-[9px] px-2 py-0.5 rounded-full font-black border border-gray-150">
                                   {item.target_calories} kcal
                                 </span>
                               </div>
@@ -455,11 +455,11 @@ function SubscriptionDashboard() {
                       </div>
 
                       {/* Card Buttons */}
-                      <div className="flex flex-wrap gap-1.5 pt-2 text-[9px] font-bold">
+                      <div className="flex flex-wrap gap-1.5 pt-2 text-[9px] font-black">
                         {isInactive ? (
                           <button
                             onClick={() => updateDayStatus(item.day, item.meal_slot, 'active')}
-                            className="w-full py-1.5 bg-diet-primary hover:bg-emerald-600 text-white rounded-lg text-center shadow-xs"
+                            className="w-full py-1.5 bg-brand-primary hover:bg-brand-secondary text-white rounded-xl text-center shadow-xs uppercase tracking-wider"
                           >
                             Resume Delivery
                           </button>
@@ -469,26 +469,26 @@ function SubscriptionDashboard() {
                               <>
                                 <button
                                   onClick={() => fetchSwapOptions(item)}
-                                  className="flex-1 py-1.5 bg-diet-light hover:bg-diet-primary hover:text-white text-diet-primary rounded-lg text-center flex items-center justify-center gap-1 transition-all border border-diet-primary border-opacity-20"
+                                  className="flex-1 py-1.5 bg-brand-soft hover:bg-brand-primary hover:text-white text-brand-primary rounded-xl text-center flex items-center justify-center gap-1 transition-brand border border-brand-soft"
                                 >
                                   <Edit2 size={10} />
                                   <span>Swap</span>
                                 </button>
                                 <button
                                   onClick={() => startEditing(item)}
-                                  className="px-2 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-lg text-center border border-gray-200"
+                                  className="px-2 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-xl text-center border border-gray-200"
                                 >
                                   Macros
                                 </button>
                                 <button
                                   onClick={() => updateDayStatus(item.day, item.meal_slot, 'skipped')}
-                                  className="px-2 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-center"
+                                  className="px-2 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-center"
                                 >
                                   Skip
                                 </button>
                                 <button
                                   onClick={() => updateDayStatus(item.day, item.meal_slot, 'paused')}
-                                  className="px-2 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-600 rounded-lg text-center"
+                                  className="px-2 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-600 rounded-xl text-center"
                                 >
                                   Pause
                                 </button>
@@ -506,11 +506,11 @@ function SubscriptionDashboard() {
 
           {/* Dynamic Swap Solver Modal */}
           {swappingDay && (
-            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="fixed inset-0 bg-black/45 backdrop-blur-sm flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl space-y-6">
                 <div className="space-y-1">
-                  <h3 className="text-lg font-black text-qcommerce-black">Solve Swap for {swappingDay.day} ({swappingDay.meal_slot})</h3>
-                  <p className="text-xs text-gray-500">
+                  <h3 className="text-lg font-black text-gray-900 uppercase">Solve Swap for {swappingDay.day} ({swappingDay.meal_slot})</h3>
+                  <p className="text-xs text-gray-500 font-semibold">
                     Target Macros: {swappingDay.target_protein_g}g Protein, {swappingDay.target_carbs_g}g Carbs, {swappingDay.target_calories}kcal
                   </p>
                 </div>
@@ -520,7 +520,7 @@ function SubscriptionDashboard() {
                 ) : (
                   <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
                     {swapOptions.length === 0 ? (
-                      <div className="p-4 bg-red-50 text-red-800 rounded-xl border border-red-100 text-xs flex gap-2">
+                      <div className="p-4 bg-red-50 text-red-750 rounded-2xl border border-red-200 text-xs flex gap-2">
                         <ShieldAlert className="shrink-0 text-red-600" size={16} />
                         <p>No feasible match found in current inventory for these targets. Try editing targets first.</p>
                       </div>
@@ -528,28 +528,28 @@ function SubscriptionDashboard() {
                       swapOptions.map((option, oIdx) => (
                         <div
                           key={oIdx}
-                          className="w-full text-left p-3.5 rounded-xl border border-gray-200 hover:border-diet-primary transition-all flex flex-col gap-2 bg-gray-50"
+                          className="w-full text-left p-3.5 rounded-2xl border border-gray-200 hover:border-brand-primary transition-brand flex flex-col gap-2 bg-gray-50"
                         >
                           <div className="flex justify-between items-center">
                             <span className="text-xs font-bold text-gray-800 leading-snug">{option.name}</span>
-                            <span className="bg-diet-light text-diet-primary text-[9px] font-black px-2 py-0.5 rounded-full">
+                            <span className="bg-brand-soft text-brand-primary text-[9px] font-black px-2 py-0.5 rounded-full">
                               Score: {option.match_score}%
                             </span>
                           </div>
                           
                           <div className="flex flex-wrap gap-1">
                             {option.components.map((c, cIdx) => (
-                              <span key={cIdx} className="bg-white border border-gray-100 text-[8px] px-1.5 py-0.5 rounded text-gray-500 font-semibold">
+                              <span key={cIdx} className="bg-white border border-gray-150 text-[8px] px-1.5 py-0.5 rounded text-gray-500 font-semibold">
                                 {c.name} ({Math.round(c.weight_g)}g)
                               </span>
                             ))}
                           </div>
 
-                          <div className="flex justify-between items-center text-[9px] text-gray-400 font-bold pt-1 border-t border-gray-100">
-                            <span>₹{option.price}</span>
+                          <div className="flex justify-between items-center text-[9px] text-gray-400 font-bold pt-1 border-t border-gray-150">
+                            <span className="font-black text-gray-700">₹{option.price}</span>
                             <button
                               onClick={() => handleSwap(option)}
-                              className="px-3 py-1 bg-diet-primary hover:bg-emerald-600 text-white rounded font-bold"
+                              className="px-3 py-1 bg-brand-primary hover:bg-brand-secondary text-white rounded-lg font-black transition-brand"
                             >
                               Choose This
                             </button>
@@ -563,7 +563,7 @@ function SubscriptionDashboard() {
                 <div className="flex justify-end pt-2">
                   <button
                     onClick={() => { setSwappingDay(null); setSwapOptions([]); }}
-                    className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-extrabold text-xs rounded-xl"
+                    className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-750 font-black text-xs rounded-xl"
                   >
                     Cancel
                   </button>
@@ -578,19 +578,19 @@ function SubscriptionDashboard() {
       {/* Operations/Forecasting Mode */}
       {activeTab === 'operations' && (
         <div className="space-y-6">
-          <div className="bg-white/80 backdrop-blur-md border border-white/50 rounded-3xl p-6 shadow-lg space-y-4">
+          <div className="bg-white border border-gray-150 rounded-3xl p-6 shadow-lg card-shadow space-y-4">
             <div className="flex justify-between items-center flex-wrap gap-4">
               <div>
-                <h3 className="text-lg font-bold text-qcommerce-black">Next Week Inventory Demand Forecast</h3>
-                <p className="text-xs text-gray-500">
+                <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider">Next Week Inventory Demand Forecast</h3>
+                <p className="text-xs text-gray-500 font-semibold">
                   Calculates ingredient requirements based on active subscription rotations. Excludes skipped/paused days.
                 </p>
               </div>
               <button
                 onClick={fetchForecast}
-                className="inline-flex items-center gap-1.5 bg-diet-light hover:bg-diet-accent hover:text-white text-diet-primary font-bold text-xs px-3.5 py-2 rounded-xl transition-all"
+                className="inline-flex items-center gap-1.5 bg-brand-soft hover:bg-brand-primary hover:text-white text-brand-primary font-black text-xs px-3.5 py-2 rounded-xl transition-brand shadow-xs"
               >
-                <RefreshCw size={14} />
+                <RefreshCw size={13} />
                 <span>Refresh Forecast</span>
               </button>
             </div>
@@ -598,13 +598,13 @@ function SubscriptionDashboard() {
             {loadingForecast ? (
               <p className="text-xs text-gray-500 py-6 text-center">Loading forecast data...</p>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto border border-gray-150 rounded-2xl">
                 <table className="min-w-full text-xs text-left">
                   <thead>
-                    <tr className="bg-gray-100 text-gray-700 font-bold border-b border-gray-200">
+                    <tr className="bg-gray-50 text-gray-500 font-black border-b border-gray-150 uppercase tracking-wider text-[10px]">
                       <th className="p-3">Ingredient</th>
                       <th className="p-3">Current Stock</th>
-                      <th className="p-3">Expected Demand (Subscribers)</th>
+                      <th className="p-3">Expected Demand</th>
                       <th className="p-3">Potential Shortage</th>
                       <th className="p-3">Status</th>
                       <th className="p-3">Prep Tier</th>
@@ -612,29 +612,29 @@ function SubscriptionDashboard() {
                   </thead>
                   <tbody>
                     {forecast.map((item, idx) => {
-                      let statusClass = "bg-emerald-100 text-emerald-800";
+                      let statusClass = "bg-emerald-50 text-emerald-700 border-emerald-100";
                       if (item.status === "Low Stock") {
-                        statusClass = "bg-amber-100 text-amber-800";
+                        statusClass = "bg-amber-50 text-amber-700 border-amber-100";
                       } else if (item.status === "Out of Stock") {
-                        statusClass = "bg-red-100 text-red-800";
+                        statusClass = "bg-red-50 text-red-700 border-red-100";
                       }
 
                       if (item.expected_demand_g === 0) return null;
 
                       return (
-                        <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50 font-medium">
-                          <td className="p-3 font-bold text-gray-800">{item.name}</td>
+                        <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50 font-bold text-gray-700">
+                          <td className="p-3 font-black text-gray-900">{item.name}</td>
                           <td className="p-3">{(item.current_stock_g / 1000).toFixed(2)} kg</td>
                           <td className="p-3">{(item.expected_demand_g / 1000).toFixed(2)} kg</td>
-                          <td className="p-3 font-extrabold text-red-600">
+                          <td className="p-3 font-black text-red-600">
                             {item.potential_shortage_g > 0 ? `${(item.potential_shortage_g / 1000).toFixed(2)} kg` : '0.00 kg'}
                           </td>
                           <td className="p-3">
-                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${statusClass}`}>
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black border uppercase tracking-wider ${statusClass}`}>
                               {item.status}
                             </span>
                           </td>
-                          <td className="p-3 text-gray-500">Tier {item.prep_tier}</td>
+                          <td className="p-3 text-gray-400 font-semibold">Tier {item.prep_tier}</td>
                         </tr>
                       );
                     })}
@@ -643,9 +643,9 @@ function SubscriptionDashboard() {
               </div>
             )}
             
-            <div className="bg-gray-50 border border-gray-100 p-4 rounded-xl flex items-start gap-2.5 text-[11px] text-gray-500">
-              <AlertTriangle className="text-amber-500 shrink-0" size={16} />
-              <p>
+            <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex items-start gap-2.5 text-[11px] text-amber-800">
+              <AlertTriangle className="text-amber-600 shrink-0" size={16} />
+              <p className="font-semibold leading-relaxed">
                 <b>Forecasting Warning Alert:</b> Low stock ingredients are automatically marked. Darkstore managers should request replenishment from the regional distribution center to prevent macro-match failures or force substitutions.
               </p>
             </div>

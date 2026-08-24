@@ -2,43 +2,78 @@
 
 import React, { useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Sparkles, ChefHat, Tag, AlertTriangle, CheckCircle, ArrowRight } from 'lucide-react';
+import { ArrowLeft, Sparkles, ChefHat, Tag, AlertTriangle, CheckCircle, ArrowRight, ShoppingCart } from 'lucide-react';
+import { useRole } from '../context/RoleContext';
+import { useCart } from '../context/CartContext';
 
 function MealResults() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { customerId } = useRole();
+  const { addToCart } = useCart();
   
   const options = location.state?.options || [];
   const requestPayload = location.state?.requestPayload || {};
 
-  const [ordering, setOrdering] = useState(false);
+  const [selectedOrderingOptionId, setSelectedOrderingOptionId] = useState(null);
+  const [addedCartMap, setAddedCartMap] = useState({});
   const [error, setError] = useState('');
 
   if (!options || options.length === 0) {
     return (
-      <div className="max-w-md mx-auto text-center py-16 space-y-6">
+      <div className="max-w-md mx-auto text-center py-16 space-y-6 font-sans">
         <span className="text-6xl">🔍</span>
-        <h1 className="text-2xl font-black text-gray-900">No Meals Found</h1>
-        <p className="text-sm text-gray-500">
+        <h1 className="text-xl font-black text-gray-900 uppercase">No Meals Found</h1>
+        <p className="text-xs text-gray-500 font-medium leading-relaxed">
           We couldn't generate a combination satisfying your constraints. Try relaxing your budget or allergy settings.
         </p>
         <Link
           to="/diet-corner/build"
-          className="inline-flex items-center gap-2 bg-diet-primary text-white px-6 py-3 rounded-xl font-bold hover:bg-diet-dark transition-all text-sm"
+          className="inline-flex items-center gap-2 bg-[#6D28D9] hover:bg-[#5B21B6] text-white px-5 py-3 rounded-2xl font-bold transition-all text-xs uppercase tracking-wider shadow-sm"
         >
-          <ArrowLeft size={16} />
+          <ArrowLeft size={14} />
           <span>Adjust Targets</span>
         </Link>
       </div>
     );
   }
 
-  const handleOrder = async (selectedOption) => {
-    setOrdering(true);
+  const handleAddToCart = (selectedOption) => {
+    addToCart({
+      type: 'meal',
+      meal_id: selectedOption.id || selectedOption.name,
+      name: selectedOption.name,
+      price: selectedOption.price,
+      components: selectedOption.components,
+      macros: {
+        protein_g: selectedOption.protein_g,
+        carbs_g: selectedOption.carbs_g,
+        fat_g: selectedOption.fat_g,
+        calories: selectedOption.calories
+      },
+      prep_tier: selectedOption.prep_tier,
+      substitution_applied: selectedOption.substitution_applied,
+      original_item: selectedOption.original_item,
+      replacement_item: selectedOption.replacement_item,
+      similarity_score: selectedOption.similarity_score,
+      allergies: requestPayload.allergies,
+      notes: requestPayload.notes,
+      diet_type: requestPayload.diet_type
+    });
+
+    setAddedCartMap(prev => ({ ...prev, [selectedOption.id]: true }));
+    setTimeout(() => {
+      setAddedCartMap(prev => ({ ...prev, [selectedOption.id]: false }));
+    }, 2000);
+  };
+
+  const handleOrderNow = async (selectedOption) => {
+    if (selectedOrderingOptionId !== null) return;
+    setSelectedOrderingOptionId(selectedOption.id);
     setError('');
 
     const orderPayload = {
-      user_id: "demo_user",
+      user_id: customerId || "cust_prototype",
       target_protein_g: requestPayload.target_protein_g,
       target_carbs_g: requestPayload.target_carbs_g,
       target_calories: requestPayload.target_calories,
@@ -58,38 +93,38 @@ function MealResults() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create order.');
+        const errData = await response.json();
+        throw new Error(errData.detail || 'Failed to create order.');
       }
 
       const data = await response.json();
-      // Redirect to Order Confirmation screen
-      navigate(`/diet-corner/order/${data.order_id}`);
+      navigate(`/orders/${data.order_id}`);
     } catch (err) {
       setError(err.message || 'Server error creating order.');
-    } finally {
-      setOrdering(false);
+      setSelectedOrderingOptionId(null);
     }
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-6 max-w-4xl mx-auto font-sans text-gray-800">
+      
       {/* Back button */}
-      <Link to="/diet-corner/build" className="inline-flex items-center gap-1.5 text-xs font-bold text-diet-primary hover:underline">
-        <ArrowLeft size={14} />
+      <Link to="/diet-corner/build" className="inline-flex items-center gap-1.5 text-xs font-bold text-[#6D28D9] hover:underline uppercase tracking-wider">
+        <ArrowLeft size={13} />
         <span>Adjust Macro Targets</span>
       </Link>
 
       {/* Header info */}
       <div className="space-y-1">
-        <h1 className="text-2xl font-black text-qcommerce-black">AI Optimized Meal Matches</h1>
-        <p className="text-xs text-gray-500">
-          Below are the best combinations optimized for your targets:
-          <span className="font-bold text-gray-700"> {requestPayload.target_protein_g}g Protein • {requestPayload.target_carbs_g}g Carbs • {requestPayload.target_fat_g}g Fat • {requestPayload.target_calories} kcal</span>
+        <h1 className="text-xl font-black text-gray-900 uppercase tracking-wider">AI Optimized Meal Matches</h1>
+        <p className="text-xs text-gray-500 font-semibold">
+          Optimized for targets:
+          <span className="text-[#6D28D9] font-black"> {requestPayload.target_protein_g}g Protein • {requestPayload.target_carbs_g}g Carbs • {requestPayload.target_fat_g}g Fat • {requestPayload.target_calories} kcal</span>
         </p>
       </div>
 
       {error && (
-        <div className="bg-red-50 text-red-600 text-xs p-3.5 rounded-xl border border-red-200 font-semibold">
+        <div className="bg-red-50 text-red-700 text-xs p-3.5 rounded-xl border border-red-200 font-bold">
           {error}
         </div>
       )}
@@ -97,42 +132,44 @@ function MealResults() {
       {/* Options List */}
       <div className="space-y-6">
         {options.map((opt, idx) => {
-          // Color coding for feasibility badges
           let badgeClass = "bg-emerald-50 text-emerald-700 border-emerald-200";
           if (opt.feasibility_status === "Good Match") {
-            badgeClass = "bg-blue-50 text-blue-700 border-blue-200";
+            badgeClass = "bg-[#F3E8FF] text-[#6D28D9] border-[#D8B4FE]";
           } else if (opt.feasibility_status === "Closest Available") {
             badgeClass = "bg-amber-50 text-amber-700 border-amber-200";
           }
 
+          const isThisOrdering = selectedOrderingOptionId === opt.id;
+          const isAddedToCart = addedCartMap[opt.id];
+
           return (
             <div
               key={opt.id}
-              className="bg-white/80 backdrop-blur-md rounded-3xl border border-white/50 p-6 md:p-8 shadow-lg flex flex-col md:flex-row justify-between gap-6 hover:shadow-2xl hover:-translate-y-0.5 transition-all duration-300 relative overflow-hidden"
+              className="bg-white rounded-3xl border border-gray-200 p-6 md:p-8 card-shadow flex flex-col md:flex-row justify-between gap-6 hover:-translate-y-0.5 transition-all relative overflow-hidden"
             >
               {/* Option Number Tag */}
-              <div className="absolute top-0 left-0 bg-diet-primary text-white text-[10px] font-black px-3.5 py-1 rounded-br-2xl uppercase tracking-wider">
+              <div className="absolute top-0 left-0 bg-[#6D28D9] text-white text-[9px] font-black px-3.5 py-1 rounded-br-2xl uppercase tracking-wider">
                 Option #{idx + 1}
               </div>
 
               {/* Left Side: Information & Components */}
               <div className="flex-1 space-y-4 pt-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-lg md:text-xl font-black text-qcommerce-black">{opt.name}</h2>
-                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${badgeClass}`}>
+                  <h2 className="text-base md:text-lg font-black text-gray-900">{opt.name}</h2>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black border uppercase tracking-wider ${badgeClass}`}>
                     {opt.feasibility_status}
                   </span>
                 </div>
 
                 {/* AI Explanation Layer */}
-                <div className="bg-emerald-50 bg-opacity-50 border border-emerald-100 rounded-xl p-3 flex flex-col gap-2 text-xs text-diet-dark">
+                <div className="bg-[#F3E8FF] border border-[#D8B4FE] rounded-2xl p-4 flex flex-col gap-2 text-xs text-gray-700">
                   <div className="flex items-start gap-2">
-                    <Sparkles size={14} className="text-yellow-500 shrink-0 mt-0.5" />
+                    <Sparkles size={14} className="text-[#6D28D9] shrink-0 mt-0.5" />
                     <span className="font-semibold leading-relaxed">{opt.explanation}</span>
                   </div>
                   {opt.explanation_detail && (
-                    <details className="mt-1 text-[10px] text-gray-500 bg-white p-2.5 rounded-lg border border-gray-150 cursor-pointer w-full">
-                      <summary className="font-bold text-diet-primary select-none outline-none">Why this meal? (Optimizer Details)</summary>
+                    <details className="mt-1 text-[10px] text-gray-500 bg-white p-2.5 rounded-xl border border-gray-200 cursor-pointer w-full">
+                      <summary className="font-bold text-[#6D28D9] select-none outline-none">Why this meal? (Optimizer Details)</summary>
                       <ul className="mt-1.5 space-y-1 pl-3.5 list-disc leading-relaxed font-semibold">
                         {Object.entries(opt.explanation_detail).map(([key, desc]) => (
                           <li key={key}>{desc}</li>
@@ -144,12 +181,12 @@ function MealResults() {
 
                 {/* Substitution Alert */}
                 {opt.substitution_applied && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 space-y-1">
-                    <div className="flex items-center gap-1 text-xs font-bold text-amber-800">
-                      <AlertTriangle size={14} />
-                      <span>Substitution Applied (Meal Recalculated)</span>
+                  <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-1 shadow-xs">
+                    <div className="flex items-center gap-1.5 text-xs font-black text-amber-800 uppercase tracking-wide">
+                      <AlertTriangle size={13} />
+                      <span>Substitution Applied</span>
                     </div>
-                    <p className="text-xs text-amber-700 leading-normal font-semibold">
+                    <p className="text-[11px] text-amber-700 leading-relaxed font-semibold">
                       {opt.replacement_item} substituted for {opt.original_item} because {opt.original_item.toLowerCase()} is out of stock. (Similarity score: {opt.similarity_score})
                     </p>
                   </div>
@@ -157,54 +194,49 @@ function MealResults() {
 
                 {/* Ingredient breakdown */}
                 <div className="space-y-2">
-                  <h3 className="text-xs font-bold text-gray-700">Portion Components</h3>
+                  <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Portion Components</h3>
                   <div className="flex flex-wrap gap-2">
                     {opt.components.map((comp, cIdx) => (
-                      <div key={cIdx} className="bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 font-semibold text-gray-700">
+                      <div key={cIdx} className="bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 font-bold text-gray-700">
                         <span className="text-[10px] text-gray-400">●</span>
                         <span>{comp.name}</span>
-                        <span className="text-diet-primary font-bold">({comp.weight_g}g)</span>
+                        <span className="text-[#6D28D9] font-black">({comp.weight_g}g)</span>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
 
-              {/* Right Side: Macro bars, pricing, Order button */}
-              <div className="w-full md:w-72 bg-gray-50 rounded-2xl p-4 md:p-6 border border-gray-100 flex flex-col justify-between gap-4">
+              {/* Right Side: Macro bars, pricing, Actions */}
+              <div className="w-full md:w-72 bg-gray-50 rounded-2xl p-4 md:p-6 border border-gray-200 flex flex-col justify-between gap-4">
                 
                 {/* Score and Price */}
                 <div className="flex justify-between items-center pb-3 border-b border-gray-200">
                   <div className="text-center md:text-left">
-                    <span className="block text-2xl font-black text-diet-primary">{opt.match_score}%</span>
-                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Macro Match Score</span>
+                    <span className="block text-2xl font-black text-[#6D28D9]">{opt.match_score}%</span>
+                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Match Score</span>
                   </div>
                   <div className="text-right">
-                    <span className="block text-xl font-black text-qcommerce-black">₹{opt.price}</span>
-                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-0.5 justify-end">
-                      <Tag size={10} /> Portioned Price
+                    <span className="block text-xl font-black text-gray-900">₹{opt.price}</span>
+                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-wider flex items-center gap-0.5 justify-end">
+                      <Tag size={10} /> Price
                     </span>
                   </div>
                 </div>
 
                 {/* Macro Progress Bars */}
-                <div className="space-y-3 py-2 text-xs">
+                <div className="space-y-3 py-1 text-xs">
                   {/* Protein */}
                   <div className="space-y-1">
                     <div className="flex justify-between font-bold text-gray-700">
                       <span>Protein</span>
                       <span className="flex items-center gap-1">
                         <span>{opt.protein_g}g / <span className="text-gray-400 font-medium">{requestPayload.target_protein_g}g</span></span>
-                        {requestPayload.target_protein_g - opt.protein_g > 1 && (
-                          <span className="bg-red-50 text-red-600 px-1.5 py-0.5 rounded text-[9px] font-black">
-                            -{(requestPayload.target_protein_g - opt.protein_g).toFixed(1)}g shortfall
-                          </span>
-                        )}
                       </span>
                     </div>
-                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-diet-primary rounded-full transition-all duration-500"
+                        className="h-full bg-[#6D28D9] rounded-full transition-all duration-500"
                         style={{ width: `${Math.min(100, (opt.protein_g / requestPayload.target_protein_g) * 100)}%` }}
                       ></div>
                     </div>
@@ -216,16 +248,11 @@ function MealResults() {
                       <span>Carbs</span>
                       <span className="flex items-center gap-1">
                         <span>{opt.carbs_g}g / <span className="text-gray-400 font-medium">{requestPayload.target_carbs_g}g</span></span>
-                        {requestPayload.target_carbs_g - opt.carbs_g > 1 && (
-                          <span className="bg-red-50 text-red-600 px-1.5 py-0.5 rounded text-[9px] font-black">
-                            -{(requestPayload.target_carbs_g - opt.carbs_g).toFixed(1)}g shortfall
-                          </span>
-                        )}
                       </span>
                     </div>
-                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-blue-600 rounded-full transition-all duration-500"
+                        className="h-full bg-[#6D28D9] rounded-full transition-all duration-500"
                         style={{ width: `${Math.min(100, (opt.carbs_g / requestPayload.target_carbs_g) * 100)}%` }}
                       ></div>
                     </div>
@@ -237,16 +264,11 @@ function MealResults() {
                       <span>Fat</span>
                       <span className="flex items-center gap-1">
                         <span>{opt.fat_g}g / <span className="text-gray-400 font-medium">{requestPayload.target_fat_g}g</span></span>
-                        {requestPayload.target_fat_g - opt.fat_g > 1 && (
-                          <span className="bg-red-50 text-red-600 px-1.5 py-0.5 rounded text-[9px] font-black">
-                            -{(requestPayload.target_fat_g - opt.fat_g).toFixed(1)}g shortfall
-                          </span>
-                        )}
                       </span>
                     </div>
-                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-amber-500 rounded-full transition-all duration-500"
+                        className="h-full bg-[#6D28D9] rounded-full transition-all duration-500"
                         style={{ width: `${Math.min(100, (opt.fat_g / requestPayload.target_fat_g) * 100)}%` }}
                       ></div>
                     </div>
@@ -258,45 +280,58 @@ function MealResults() {
                       <span>Calories</span>
                       <span className="flex items-center gap-1">
                         <span>{opt.calories} kcal / <span className="text-gray-400 font-medium">{requestPayload.target_calories} kcal</span></span>
-                        {requestPayload.target_calories - opt.calories > 10 && (
-                          <span className="bg-red-50 text-red-600 px-1.5 py-0.5 rounded text-[9px] font-black">
-                            -{(requestPayload.target_calories - opt.calories).toFixed(0)} kcal shortfall
-                          </span>
-                        )}
                       </span>
                     </div>
-                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-red-500 rounded-full transition-all duration-500"
+                        className="h-full bg-[#6D28D9] rounded-full transition-all duration-500"
                         style={{ width: `${Math.min(100, (opt.calories / requestPayload.target_calories) * 100)}%` }}
                       ></div>
                     </div>
                   </div>
                 </div>
 
-                {/* Prep Tier info */}
-                <div className="flex justify-between items-center text-[10px] font-bold text-gray-500 pt-2 border-t border-gray-200">
-                  <span className="flex items-center gap-1">
-                    <ChefHat size={12} /> Prep Tier {opt.prep_tier}
-                  </span>
-                  <span>Assemble Time: {opt.prep_time_min} mins</span>
-                </div>
+                {/* Actions: Add to Cart & Order Now */}
+                <div className="space-y-2 pt-2 border-t border-gray-200">
+                  <button
+                    onClick={() => handleAddToCart(opt)}
+                    className={`w-full py-2.5 border-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                      isAddedToCart
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                        : 'bg-white border-[#C4B5FD] text-[#6D28D9] hover:bg-[#F3E8FF]'
+                    }`}
+                  >
+                    {isAddedToCart ? (
+                      <>
+                        <CheckCircle size={14} />
+                        <span>Added to Cart!</span>
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingCart size={14} />
+                        <span>Add to Cart</span>
+                      </>
+                    )}
+                  </button>
 
-                {/* Order CTA */}
-                <button
-                  onClick={() => handleOrder(opt)}
-                  disabled={ordering}
-                  className="w-full mt-2 py-3 bg-qcommerce-black hover:bg-gray-800 text-white font-extrabold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm"
-                >
-                  {ordering ? (
-                    'Ordering...'
-                  ) : (
-                    <>
-                      <span>Select & Order Meal</span>
-                      <ArrowRight size={14} />
-                    </>
-                  )}
-                </button>
+                  <button
+                    onClick={() => handleOrderNow(opt)}
+                    disabled={selectedOrderingOptionId !== null}
+                    className="w-full py-3 bg-[#6D28D9] hover:bg-[#5B21B6] active:bg-[#4C1D95] text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-md uppercase tracking-wider active:scale-95 disabled:bg-gray-400"
+                  >
+                    {isThisOrdering ? (
+                      <span className="flex items-center gap-2 text-white">
+                        <span className="animate-spin h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full"></span>
+                        <span>ORDERING...</span>
+                      </span>
+                    ) : (
+                      <>
+                        <span className="text-white">Order Now</span>
+                        <ArrowRight size={14} className="text-white" />
+                      </>
+                    )}
+                  </button>
+                </div>
 
               </div>
             </div>

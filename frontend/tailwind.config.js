@@ -7,16 +7,21 @@ export default {
   theme: {
     extend: {
       colors: {
+        brand: {
+          primary: "var(--brand-primary)",
+          secondary: "var(--brand-secondary)",
+          soft: "var(--brand-soft)",
+        },
         qcommerce: {
-          yellow: "#FFC900",
-          black: "#1C1C1E",
-          gray: "#F3F4F6",
+          yellow: "var(--brand-primary)",
+          black: "var(--text-primary)",
+          gray: "var(--text-secondary)",
         },
         diet: {
-          primary: "#10B981",    // Emerald 500
-          dark: "#065F46",       // Emerald 800
-          light: "#ECFDF5",      // Emerald 50
-          accent: "#34D399",     // Emerald 400
+          primary: "var(--brand-primary)",
+          dark: "#4C1D95",
+          light: "var(--brand-soft)",
+          accent: "var(--brand-secondary)",
         }
       },
     },

@@ -4,12 +4,16 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "vite --config vite.config.js --port 5173",
+    "dev:customer": "vite --config vite.config.js --port 5173",
+    "dev:operations": "vite --config vite.operations.config.js --port 5174",
+    "build": "vite build && vite build --config vite.operations.config.js",
     "lint": "oxlint",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@types/leaflet": "^1.9.22",
+    "leaflet": "^1.9.4",
     "lucide-react": "^1.31.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

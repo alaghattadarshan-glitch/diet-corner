@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS ingredients (
     calories_per_100g REAL NOT NULL,
     price_per_100g REAL NOT NULL,
     stock_quantity_g REAL NOT NULL,
+    reserved_stock_g REAL NOT NULL DEFAULT 0.0,
+    consumed_stock_g REAL NOT NULL DEFAULT 0.0,
     prep_tier REAL NOT NULL, -- 0.0, 1.0, 1.5
     preparation_time INTEGER NOT NULL, -- in minutes
     substitution_group TEXT
@@ -20,6 +22,9 @@ CREATE TABLE IF NOT EXISTS ingredients (
 CREATE TABLE IF NOT EXISTS orders (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
+    customer_id TEXT,
+    kitchen_id TEXT DEFAULT 'BLR-KITCHEN-01',
+    assigned_maker_id TEXT DEFAULT 'maker_01',
     target_protein_g REAL NOT NULL,
     target_carbs_g REAL NOT NULL,
     target_fat_g REAL NOT NULL DEFAULT 0.0,
@@ -38,11 +43,45 @@ CREATE TABLE IF NOT EXISTS orders (
     similarity_score REAL,
     status TEXT DEFAULT 'Received',
     checklist_state TEXT DEFAULT '[]',
+    collected_items_json TEXT DEFAULT '[]',
+    delivery_address_id TEXT,
+    delivery_address_snapshot TEXT,
+    delivery_latitude REAL,
+    delivery_longitude REAL,
+    delivery_pincode TEXT,
+    delivery_area TEXT,
+    delivery_city TEXT,
+    delivery_state TEXT,
+    delivery_formatted_address TEXT,
     accepted_at TEXT,
     preparing_at TEXT,
     ready_at TEXT,
     completed_at TEXT,
+    cancelled_at TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS customer_addresses (
+    id TEXT PRIMARY KEY,
+    customer_id TEXT NOT NULL,
+    label TEXT DEFAULT 'Home',
+    receiver_name TEXT,
+    phone TEXT,
+    house_number TEXT NOT NULL,
+    building TEXT,
+    street TEXT,
+    area TEXT NOT NULL,
+    landmark TEXT,
+    city TEXT NOT NULL,
+    state TEXT NOT NULL,
+    pincode TEXT NOT NULL,
+    formatted_address TEXT NOT NULL,
+    latitude REAL,
+    longitude REAL,
+    place_id TEXT,
+    is_default INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS order_history (
@@ -111,7 +150,10 @@ CREATE TABLE IF NOT EXISTS food_maker_notifications (
     id TEXT PRIMARY KEY,
     order_id TEXT NOT NULL,
     type TEXT NOT NULL,
+    kitchen_id TEXT DEFAULT 'BLR-KITCHEN-01',
+    maker_id TEXT DEFAULT 'maker_01',
     read INTEGER DEFAULT 0,
+    status TEXT DEFAULT 'UNREAD', -- 'UNREAD', 'READ', 'ACKNOWLEDGED'
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

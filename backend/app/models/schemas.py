@@ -23,20 +23,20 @@ class SubstitutionDetail(BaseModel):
     similarity_score: float
 
 class MealOption(BaseModel):
-    id: str
+    id: Optional[str] = "meal_opt_default"
     name: str
     components: List[Dict[str, Any]] # e.g., [{"ingredient_id": "chicken_breast", "name": "Chicken Breast", "weight_g": 120, "price": 96}]
-    protein_g: float
-    carbs_g: float
-    fat_g: float
-    calories: float
+    protein_g: float = 0.0
+    carbs_g: float = 0.0
+    fat_g: float = 0.0
+    calories: float = 0.0
     price: float
-    prep_tier: float
-    prep_time_min: int
-    match_score: float
-    explanation: str
-    substitutions: List[SubstitutionDetail]
-    feasibility_status: str # 'Excellent Match', 'Good Match', 'Closest Available'
+    prep_tier: float = 1.0
+    prep_time_min: int = 15
+    match_score: float = 95.0
+    explanation: str = "AI Optimized Meal Option"
+    substitutions: List[SubstitutionDetail] = []
+    feasibility_status: str = "Good Match"
     substitution_applied: bool = False
     original_item: Optional[str] = None
     replacement_item: Optional[str] = None
@@ -47,8 +47,68 @@ class MealOption(BaseModel):
 class MatchMealResponse(BaseModel):
     options: List[MealOption]
 
+class CustomerAddressCreate(BaseModel):
+    label: str = "Home"
+    receiver_name: Optional[str] = ""
+    phone: Optional[str] = ""
+    house_number: str
+    building: Optional[str] = ""
+    street: Optional[str] = ""
+    area: str
+    landmark: Optional[str] = ""
+    city: str
+    state: str
+    pincode: str = Field(..., pattern=r"^\d{6}$")
+    formatted_address: str
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    place_id: Optional[str] = None
+    is_default: bool = False
+
+class CustomerAddressUpdate(BaseModel):
+    label: Optional[str] = None
+    receiver_name: Optional[str] = None
+    phone: Optional[str] = None
+    house_number: Optional[str] = None
+    building: Optional[str] = None
+    street: Optional[str] = None
+    area: Optional[str] = None
+    landmark: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    pincode: Optional[str] = None
+    formatted_address: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    place_id: Optional[str] = None
+    is_default: Optional[bool] = None
+
+class CustomerAddressResponse(BaseModel):
+    id: str
+    customer_id: str
+    label: str
+    receiver_name: Optional[str] = ""
+    phone: Optional[str] = ""
+    house_number: str
+    building: Optional[str] = ""
+    street: Optional[str] = ""
+    area: str
+    landmark: Optional[str] = ""
+    city: str
+    state: str
+    pincode: str
+    formatted_address: str
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    place_id: Optional[str] = None
+    is_default: bool = False
+    created_at: str
+
 class CreateOrderRequest(BaseModel):
     user_id: str
+    customer_id: Optional[str] = None
+    kitchen_id: Optional[str] = "BLR-KITCHEN-01"
+    assigned_maker_id: Optional[str] = "maker_01"
     target_protein_g: float
     target_carbs_g: float
     target_fat_g: float = 0.0
@@ -57,6 +117,15 @@ class CreateOrderRequest(BaseModel):
     allergies: List[str]
     notes: Optional[str] = ""
     selected_option: MealOption
+    delivery_address_id: Optional[str] = None
+    delivery_address: Optional[Dict[str, Any]] = None
+    delivery_latitude: Optional[float] = None
+    delivery_longitude: Optional[float] = None
+    delivery_pincode: Optional[str] = None
+    delivery_area: Optional[str] = None
+    delivery_city: Optional[str] = None
+    delivery_state: Optional[str] = None
+    delivery_formatted_address: Optional[str] = None
 
 class CreateOrderResponse(BaseModel):
     order_id: str
@@ -65,6 +134,9 @@ class CreateOrderResponse(BaseModel):
 class OrderResponse(BaseModel):
     id: str
     user_id: str
+    customer_id: Optional[str] = None
+    kitchen_id: Optional[str] = "BLR-KITCHEN-01"
+    assigned_maker_id: Optional[str] = "maker_01"
     target_protein_g: float
     target_carbs_g: float
     target_fat_g: float
@@ -83,6 +155,12 @@ class OrderResponse(BaseModel):
     similarity_score: Optional[float] = None
     status: str = "Received"
     checklist_state: Optional[str] = "[]"
+    delivery_address_id: Optional[str] = None
+    delivery_address_snapshot: Optional[str] = None
+    delivery_formatted_address: Optional[str] = None
+    delivery_area: Optional[str] = None
+    delivery_city: Optional[str] = None
+    delivery_pincode: Optional[str] = None
     accepted_at: Optional[str] = None
     preparing_at: Optional[str] = None
     ready_at: Optional[str] = None

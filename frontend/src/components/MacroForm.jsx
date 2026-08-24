@@ -42,6 +42,10 @@ function MacroForm() {
     if (urlPreset && PRESETS[urlPreset]) {
       applyPreset(urlPreset);
     }
+    const showCalc = searchParams.get('show_calc');
+    if (showCalc === 'true') {
+      setShowCalculator(true);
+    }
   }, [searchParams]);
 
   const applyPreset = (presetName) => {
@@ -121,36 +125,36 @@ function MacroForm() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6 font-sans text-gray-800">
       
       {/* Personalized Nutrition Profile Button Card */}
-      <div className="flex justify-between items-center bg-white/80 backdrop-blur-md border border-white/50 rounded-3xl p-5 shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-[#F3E8FF] border border-[#D8B4FE] rounded-3xl p-5 shadow-xs gap-3">
         <div className="space-y-1">
-          <span className="text-xs font-black text-gray-700 flex items-center gap-1.5">
-            <User size={16} className="text-diet-primary" />
+          <span className="text-xs font-black text-[#111827] flex items-center gap-1.5 uppercase tracking-wider">
+            <User size={16} className="text-[#6D28D9]" />
             <span>Personalized Nutrition Profile</span>
           </span>
-          <p className="text-[10px] text-gray-400 font-bold">Use our calculator to estimate your daily macros and calories.</p>
+          <p className="text-[10px] text-[#4B5563] font-semibold">Use our calculator to estimate your daily macros and calories.</p>
         </div>
         <button
           type="button"
           onClick={() => setShowCalculator(true)}
-          className="px-4 py-2 bg-diet-light hover:bg-diet-primary hover:text-white text-diet-primary font-bold text-xs rounded-xl transition-all"
+          className="px-4 py-2.5 bg-[#6D28D9] hover:bg-[#5B21B6] text-white font-bold text-xs rounded-xl transition-all shadow-sm uppercase tracking-wider whitespace-nowrap shrink-0"
         >
           Calculate Targets
         </button>
       </div>
 
       {/* Main Macro Builder Form */}
-      <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden card-shadow">
       
       {/* Header Banner */}
-      <div className="bg-diet-dark text-white p-6 md:p-8 space-y-2">
-        <h1 className="text-xl md:text-2xl font-black flex items-center gap-2">
-          <Sliders size={22} className="text-yellow-300" />
+      <div className="bg-gradient-to-r from-[#6D28D9] to-[#8B5CF6] text-white p-6 md:p-8 space-y-2">
+        <h1 className="text-lg md:text-xl font-black flex items-center gap-2 uppercase tracking-wider text-white">
+          <Sliders size={20} className="text-[#F3E8FF]" />
           <span>Macro Target Builder</span>
         </h1>
-        <p className="text-emerald-100 text-xs md:text-sm">
+        <p className="text-[#F3E8FF] text-[11px] font-semibold leading-relaxed">
           Define your targets. The PuLP linear programming engine will select ingredients and portion weights to match your goals.
         </p>
       </div>
@@ -159,32 +163,36 @@ function MacroForm() {
         
         {/* Presets */}
         <div className="space-y-2">
-          <label className="text-xs font-bold text-gray-700 block">Select Macro Preset</label>
-          <div className="grid grid-cols-4 gap-2">
-            {Object.keys(PRESETS).map((p) => (
-              <button
-                type="button"
-                key={p}
-                onClick={() => applyPreset(p)}
-                className={`py-2 px-1 text-center text-xs font-bold rounded-lg border transition-all ${
-                  preset === p
-                    ? 'bg-diet-primary text-white border-diet-primary shadow-sm'
-                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-                }`}
-              >
-                {p.replace('-', ' ').toUpperCase()}
-              </button>
-            ))}
+          <label className="text-xs font-black text-[#374151] uppercase tracking-wider block">Select Macro Preset</label>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {Object.keys(PRESETS).map((p) => {
+              const isSelected = preset === p;
+              return (
+                <button
+                  type="button"
+                  key={p}
+                  onClick={() => applyPreset(p)}
+                  className={`py-2.5 px-2 text-center text-xs font-bold rounded-xl border transition-all flex items-center justify-center gap-1.5 ${
+                    isSelected
+                      ? 'bg-[#6D28D9] text-white border-[#6D28D9] shadow-sm font-extrabold'
+                      : 'bg-white text-[#374151] border-gray-200 hover:bg-[#F3E8FF] hover:text-[#6D28D9] hover:border-[#C4B5FD]'
+                  }`}
+                >
+                  {isSelected && <span>✓</span>}
+                  <span>{p.replace('-', ' ').toUpperCase()}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
         {/* Sliders for Protein, Carbs, Fat, Calories */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid sm:grid-cols-2 gap-4">
           {/* Protein */}
-          <div className="space-y-2 bg-gray-50 p-4 rounded-xl border border-gray-100">
+          <div className="space-y-2 bg-gray-50 p-4 rounded-2xl border border-gray-200">
             <div className="flex justify-between items-center">
-              <span className="text-xs font-bold text-gray-700">Protein</span>
-              <span className="text-xs font-black text-diet-primary">{protein}g</span>
+              <span className="text-xs font-bold text-[#374151]">Protein Target</span>
+              <span className="text-xs font-black text-[#6D28D9] bg-white border border-[#D8B4FE] px-2.5 py-0.5 rounded-lg shadow-xs">{protein}g</span>
             </div>
             <input
               type="range"
@@ -192,15 +200,15 @@ function MacroForm() {
               max="100"
               value={protein}
               onChange={(e) => { setProtein(e.target.value); setPreset('custom'); }}
-              className="w-full accent-diet-primary"
+              className="w-full accent-[#6D28D9]"
             />
           </div>
 
           {/* Carbs */}
-          <div className="space-y-2 bg-gray-50 p-4 rounded-xl border border-gray-100">
+          <div className="space-y-2 bg-gray-50 p-4 rounded-2xl border border-gray-200">
             <div className="flex justify-between items-center">
-              <span className="text-xs font-bold text-gray-700">Carbs</span>
-              <span className="text-xs font-black text-blue-600">{carbs}g</span>
+              <span className="text-xs font-bold text-[#374151]">Carbs Target</span>
+              <span className="text-xs font-black text-[#6D28D9] bg-white border border-[#D8B4FE] px-2.5 py-0.5 rounded-lg shadow-xs">{carbs}g</span>
             </div>
             <input
               type="range"
@@ -208,15 +216,15 @@ function MacroForm() {
               max="150"
               value={carbs}
               onChange={(e) => { setCarbs(e.target.value); setPreset('custom'); }}
-              className="w-full accent-blue-600"
+              className="w-full accent-[#6D28D9]"
             />
           </div>
 
           {/* Fat */}
-          <div className="space-y-2 bg-gray-50 p-4 rounded-xl border border-gray-100">
+          <div className="space-y-2 bg-gray-50 p-4 rounded-2xl border border-gray-200">
             <div className="flex justify-between items-center">
-              <span className="text-xs font-bold text-gray-700">Fat</span>
-              <span className="text-xs font-black text-amber-500">{fat}g</span>
+              <span className="text-xs font-bold text-[#374151]">Fat Target</span>
+              <span className="text-xs font-black text-[#6D28D9] bg-white border border-[#D8B4FE] px-2.5 py-0.5 rounded-lg shadow-xs">{fat}g</span>
             </div>
             <input
               type="range"
@@ -224,15 +232,15 @@ function MacroForm() {
               max="80"
               value={fat}
               onChange={(e) => { setFat(e.target.value); setPreset('custom'); }}
-              className="w-full accent-amber-500"
+              className="w-full accent-[#6D28D9]"
             />
           </div>
 
           {/* Calories */}
-          <div className="space-y-2 bg-gray-50 p-4 rounded-xl border border-gray-100">
+          <div className="space-y-2 bg-gray-50 p-4 rounded-2xl border border-gray-200">
             <div className="flex justify-between items-center">
-              <span className="text-xs font-bold text-gray-700">Calories</span>
-              <span className="text-xs font-black text-red-500">{calories} kcal</span>
+              <span className="text-xs font-bold text-[#374151]">Calorie Cap</span>
+              <span className="text-xs font-black text-[#6D28D9] bg-white border border-[#D8B4FE] px-2.5 py-0.5 rounded-lg shadow-xs">{calories} kcal</span>
             </div>
             <input
               type="range"
@@ -240,46 +248,50 @@ function MacroForm() {
               max="1000"
               value={calories}
               onChange={(e) => { setCalories(e.target.value); setPreset('custom'); }}
-              className="w-full accent-red-500"
+              className="w-full accent-[#6D28D9]"
             />
           </div>
         </div>
 
         {/* Diet Preferences */}
         <div className="space-y-2">
-          <label className="text-xs font-bold text-gray-700 block">Dietary Preference</label>
+          <label className="text-xs font-black text-[#374151] uppercase tracking-wider block">Dietary Preference</label>
           <div className="grid grid-cols-3 gap-3">
-            {['veg', 'non-veg', 'vegan'].map((d) => (
-              <button
-                type="button"
-                key={d}
-                onClick={() => setDiet(d)}
-                className={`py-2.5 rounded-xl border text-xs font-extrabold capitalize transition-all ${
-                  diet === d
-                    ? 'bg-diet-light text-diet-primary border-diet-primary ring-1 ring-diet-primary'
-                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-                }`}
-              >
-                {d}
-              </button>
-            ))}
+            {['veg', 'non-veg', 'vegan'].map((d) => {
+              const isSelected = diet === d;
+              return (
+                <button
+                  type="button"
+                  key={d}
+                  onClick={() => setDiet(d)}
+                  className={`py-3 rounded-2xl border text-xs font-bold capitalize transition-all flex items-center justify-center gap-1 ${
+                    isSelected
+                      ? 'bg-[#F3E8FF] text-[#6D28D9] border-[#6D28D9] ring-2 ring-[#6D28D9] font-black'
+                      : 'bg-white text-[#374151] border-gray-200 hover:bg-gray-50'
+                  }`}
+                >
+                  {isSelected && <span>✓</span>}
+                  <span>{d}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
         {/* Allergy Filter */}
         <div className="space-y-2">
-          <label className="text-xs font-bold text-gray-700 block">Exclude Allergens</label>
+          <label className="text-xs font-black text-[#374151] uppercase tracking-wider block">Exclude Allergens</label>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
               onClick={() => handleAllergyChange('None')}
               className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${
                 allergies.length === 0
-                  ? 'bg-diet-light text-diet-primary border-diet-primary'
-                  : 'bg-white text-gray-700 border-gray-200'
+                  ? 'bg-[#F3E8FF] text-[#6D28D9] border-[#6D28D9] font-black'
+                  : 'bg-white text-[#374151] border-gray-200 hover:bg-gray-50'
               }`}
             >
-              None
+              {allergies.length === 0 && '✓ '}None
             </button>
             {ALLERGIES_LIST.map((allergy) => {
               const isSelected = allergies.includes(allergy);
@@ -290,11 +302,11 @@ function MacroForm() {
                   onClick={() => handleAllergyChange(allergy)}
                   className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${
                     isSelected
-                      ? 'bg-red-50 text-red-600 border-red-200'
-                      : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                      ? 'bg-red-50 text-red-700 border-red-300 font-black'
+                      : 'bg-white text-[#374151] border-gray-200 hover:bg-gray-50'
                   }`}
                 >
-                  {allergy}
+                  {isSelected && '✓ '}{allergy}
                 </button>
               );
             })}
@@ -304,11 +316,11 @@ function MacroForm() {
         {/* Prep preference & Budget */}
         <div className="grid sm:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="text-xs font-bold text-gray-700 block">Preparation Constraint</label>
+            <label className="text-xs font-black text-[#374151] uppercase tracking-wider block">Preparation Constraint</label>
             <select
               value={prepPreference}
               onChange={(e) => setPrepPreference(e.target.value)}
-              className="block w-full border border-gray-300 rounded-xl p-2.5 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-diet-primary focus:border-diet-primary"
+              className="block w-full border border-gray-200 rounded-2xl p-3 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#6D28D9] focus:border-[#6D28D9] bg-white text-[#111827] transition-all"
             >
               <option value="any">Any Preparation Tier</option>
               <option value="no_cook">Tier 0 Only (No-Cook Assembly)</option>
@@ -319,8 +331,8 @@ function MacroForm() {
 
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <label className="text-xs font-bold text-gray-700">Max Budget</label>
-              <span className="text-xs font-extrabold text-qcommerce-black">₹{budget}</span>
+              <label className="text-xs font-black text-[#374151] uppercase tracking-wider">Max Budget</label>
+              <span className="text-xs font-black text-[#6D28D9] bg-[#F3E8FF] border border-[#D8B4FE] px-2.5 py-0.5 rounded-lg">₹{budget}</span>
             </div>
             <input
               type="range"
@@ -329,17 +341,17 @@ function MacroForm() {
               step="10"
               value={budget}
               onChange={(e) => setBudget(e.target.value)}
-              className="w-full accent-qcommerce-black mt-2"
+              className="w-full accent-[#6D28D9] mt-2"
             />
           </div>
         </div>
 
         {/* Complexity Constraint (Min & Max Ingredients) */}
-        <div className="grid sm:grid-cols-2 gap-6 bg-gray-50 p-4 rounded-xl border border-gray-150">
+        <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-200">
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <label className="text-xs font-bold text-gray-700">Min Ingredients</label>
-              <span className="text-xs font-extrabold text-diet-primary">{minIngredients} items</span>
+              <label className="text-[10px] font-black text-[#4B5563] uppercase tracking-wider">Min Ingredients</label>
+              <span className="text-xs font-black text-[#6D28D9]">{minIngredients} items</span>
             </div>
             <input
               type="range"
@@ -347,14 +359,14 @@ function MacroForm() {
               max="4"
               value={minIngredients}
               onChange={(e) => setMinIngredients(Number(e.target.value))}
-              className="w-full accent-diet-primary"
+              className="w-full accent-[#6D28D9]"
             />
           </div>
 
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <label className="text-xs font-bold text-gray-700">Max Ingredients</label>
-              <span className="text-xs font-extrabold text-diet-primary">{maxIngredients} items</span>
+              <label className="text-[10px] font-black text-[#4B5563] uppercase tracking-wider">Max Ingredients</label>
+              <span className="text-xs font-black text-[#6D28D9]">{maxIngredients} items</span>
             </div>
             <input
               type="range"
@@ -362,21 +374,21 @@ function MacroForm() {
               max="7"
               value={maxIngredients}
               onChange={(e) => setMaxIngredients(Number(e.target.value))}
-              className="w-full accent-diet-primary"
+              className="w-full accent-[#6D28D9]"
             />
           </div>
         </div>
 
         {/* Preparation Notes & Chips */}
         <div className="space-y-3">
-          <label className="text-xs font-bold text-gray-700 block">Preparation Customizations / Notes</label>
+          <label className="text-xs font-black text-[#374151] uppercase tracking-wider block">Custom Assembly Notes</label>
           <div className="flex flex-wrap gap-2">
             {['Less spice', 'Less salt', 'No onion'].map((chip) => (
               <button
                 type="button"
                 key={chip}
                 onClick={() => addNoteChip(chip)}
-                className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-semibold transition-all"
+                className="px-3 py-1.5 bg-gray-50 hover:bg-[#F3E8FF] hover:text-[#6D28D9] border border-gray-200 rounded-xl text-xs font-bold transition-all"
               >
                 + {chip}
               </button>
@@ -387,31 +399,31 @@ function MacroForm() {
             placeholder="Add any other preferences (e.g., extra lemon, dressing on side)..."
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="block w-full border border-gray-300 rounded-xl p-2.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-diet-primary focus:border-diet-primary"
+            className="block w-full border border-gray-200 rounded-2xl p-3 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#6D28D9] focus:border-[#6D28D9] bg-white text-[#111827] transition-all"
           />
         </div>
 
         {error && (
-          <div className="bg-red-50 text-red-600 text-xs p-3.5 rounded-xl border border-red-200 font-semibold">
+          <div className="bg-red-50 text-red-700 text-xs p-3.5 rounded-xl border border-red-200 font-bold">
             {error}
           </div>
         )}
 
-        {/* Submit */}
+        {/* Submit FIND MY MEAL button */}
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-4 bg-diet-primary hover:bg-diet-dark text-white font-extrabold rounded-xl shadow-md transition-all text-sm flex items-center justify-center gap-2"
+          className="w-full h-12 md:h-14 bg-[#6D28D9] hover:bg-[#5B21B6] active:bg-[#4C1D95] text-white font-bold rounded-2xl shadow-md transition-all text-sm md:text-base flex items-center justify-center gap-2 uppercase tracking-wider"
         >
           {loading ? (
-            <span className="flex items-center gap-2">
-              <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
-              Analyzing inventory and building your meal...
+            <span className="flex items-center gap-2 text-white font-bold">
+              <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span>
+              <span>Finding your best meal...</span>
             </span>
           ) : (
             <>
-              <ShieldCheck size={18} />
-              <span>Find My Meal</span>
+              <ShieldCheck size={20} className="text-white" />
+              <span>FIND MY MEAL →</span>
             </>
           )}
         </button>
@@ -420,12 +432,12 @@ function MacroForm() {
       </div>
 
       {showCalculator && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="max-w-lg w-full max-h-[90vh] overflow-y-auto bg-white rounded-3xl shadow-2xl relative">
+        <div className="fixed inset-0 bg-black/45 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="max-w-lg w-full max-h-[90vh] overflow-y-auto bg-white rounded-3xl shadow-2xl relative transition-brand">
             <button
               type="button"
               onClick={() => setShowCalculator(false)}
-              className="absolute top-4 right-4 p-1.5 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition-all z-10"
+              className="absolute top-4 right-4 p-1.5 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition-brand z-10"
             >
               <X size={18} />
             </button>
@@ -437,6 +449,13 @@ function MacroForm() {
                 }}
                 onApplyProteinTarget={(prot) => {
                   setProtein(prot);
+                  setShowCalculator(false);
+                }}
+                onApplyAllTargets={(cals, prot, carbsVal, fatVal) => {
+                  setCalories(cals);
+                  setProtein(prot);
+                  setCarbs(carbsVal);
+                  setFat(fatVal);
                   setShowCalculator(false);
                 }}
               />
