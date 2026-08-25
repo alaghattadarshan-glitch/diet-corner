@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRole } from '../context/RoleContext';
 import { User, Activity, Flame, Target, Edit3, Check, RefreshCw, Scale, Ruler } from 'lucide-react';
+import { API_BASE_URL } from '../apiConfig';
 
 const ACTIVITY_MULTIPLIERS = {
   sedentary: { label: 'Sedentary (Little or no exercise)', value: 1.2 },
@@ -52,7 +53,7 @@ function Profile() {
         populateFields(parsed);
       } else {
         // Try backend
-        const res = await fetch(`http://127.0.0.1:8000/api/nutrition/profile?user_id=${customerId}`);
+        const res = await fetch(`${API_BASE_URL}/api/nutrition/profile?user_id=${customerId}`);
         if (res.ok) {
           const data = await res.json();
           if (data && data.user_id) {
@@ -191,7 +192,7 @@ function Profile() {
 
     // Send to backend
     try {
-      await fetch('http://127.0.0.1:8000/api/nutrition/profile/update', {
+      await fetch(`${API_BASE_URL}/api/nutrition/profile/update`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(profileData)

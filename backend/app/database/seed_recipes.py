@@ -2,7 +2,7 @@
 
 import json
 import sqlite3
-from app.database.connection import DB_PATH
+from app.database.connection import get_db_connection
 
 RECIPES_DATA = [
     # --- BOWLS (15) ---
@@ -949,7 +949,7 @@ RECIPES_DATA = [
 ]
 
 def seed_recipes():
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
     
     # Check if table exists and has rows
@@ -959,7 +959,7 @@ def seed_recipes():
         if count > 0:
             conn.close()
             return
-    except sqlite3.OperationalError:
+    except Exception:
         pass
         
     print(f"Seeding {len(RECIPES_DATA)} Recipes into Knowledge Base...")

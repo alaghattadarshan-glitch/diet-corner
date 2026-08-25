@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { MapPin, Plus, Home, Briefcase, Tag, Trash2, CheckCircle2, Star, ArrowLeft } from 'lucide-react';
 import { useRole } from '../context/RoleContext';
+import { API_BASE_URL } from '../apiConfig';
 
 function AddressBook() {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ function AddressBook() {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/customer/addresses', {
+      const response = await fetch(`${API_BASE_URL}/api/customer/addresses`, {
         headers: { 'X-Customer-ID': customerId || 'demo_user' }
       });
       if (!response.ok) {
@@ -38,7 +39,7 @@ function AddressBook() {
 
   const handleSetDefault = async (addressId) => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/customer/addresses/${addressId}/default`, {
+      const response = await fetch(`${API_BASE_URL}/api/customer/addresses/${addressId}/default`, {
         method: 'POST',
         headers: { 'X-Customer-ID': customerId || 'demo_user' }
       });
@@ -51,7 +52,7 @@ function AddressBook() {
   const handleDelete = async (addressId) => {
     if (!window.confirm('Are you sure you want to delete this address?')) return;
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/customer/addresses/${addressId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/customer/addresses/${addressId}`, {
         method: 'DELETE',
         headers: { 'X-Customer-ID': customerId || 'demo_user' }
       });

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ShieldAlert, Check, Ban, PlusCircle, RotateCcw } from 'lucide-react';
+import { API_BASE_URL } from '../apiConfig';
 
 function InventoryAdmin() {
   const [ingredients, setIngredients] = useState([]);
@@ -11,7 +12,7 @@ function InventoryAdmin() {
 
   const fetchInventory = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/inventory');
+      const response = await fetch(`${API_BASE_URL}/api/inventory`);
       if (!response.ok) throw new Error('Failed to load inventory.');
       const data = await response.json();
       setIngredients(data);
@@ -28,7 +29,7 @@ function InventoryAdmin() {
 
   const triggerStockout = async (ingId) => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/demo/stockout', {
+      const response = await fetch(`${API_BASE_URL}/api/demo/stockout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ingredient_id: ingId })
@@ -44,7 +45,7 @@ function InventoryAdmin() {
 
   const triggerRestock = async (ingId) => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/demo/restock', {
+      const response = await fetch(`${API_BASE_URL}/api/demo/restock`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ingredient_id: ingId })

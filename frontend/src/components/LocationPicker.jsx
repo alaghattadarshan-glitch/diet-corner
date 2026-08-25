@@ -8,6 +8,7 @@ import { MapPin, Search, Navigation, CheckCircle2, ArrowLeft, Building, Home, Br
 import { useRole } from '../context/RoleContext';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { API_BASE_URL } from '../apiConfig';
 
 // Fix Leaflet default marker icon broken by Vite/Webpack bundling
 delete L.Icon.Default.prototype._getIconUrl;
@@ -267,7 +268,7 @@ function LocationPicker() {
     };
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/customer/addresses', {
+      const response = await fetch(`${API_BASE_URL}/api/customer/addresses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

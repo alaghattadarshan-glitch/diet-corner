@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Bell, Play, CheckCircle2, ClipboardList, Package, ChefHat, Activity, ShieldCheck, AlertCircle, PackageCheck, XCircle } from 'lucide-react';
+import { API_BASE_URL } from '../apiConfig';
 
 function FoodMakerDashboard() {
   const [orders, setOrders] = useState([]);
@@ -23,7 +24,7 @@ function FoodMakerDashboard() {
           queryStr = `maker_id=admin`;
         }
 
-        const resOrders = await fetch(`http://127.0.0.1:8000/api/food-maker/orders?${queryStr}`, {
+        const resOrders = await fetch(`${API_BASE_URL}/api/food-maker/orders?${queryStr}`, {
           headers: { 'X-Role': station === 'admin' ? 'admin' : 'food_maker' }
         });
         if (resOrders.ok) {
@@ -43,7 +44,7 @@ function FoodMakerDashboard() {
           setKpi(counts);
         }
 
-        const resNotifs = await fetch(`http://127.0.0.1:8000/api/food-maker/notifications?${queryStr}`, {
+        const resNotifs = await fetch(`${API_BASE_URL}/api/food-maker/notifications?${queryStr}`, {
           headers: { 'X-Role': station === 'admin' ? 'admin' : 'food_maker' }
         });
         if (resNotifs.ok) {
@@ -69,7 +70,7 @@ function FoodMakerDashboard() {
 
   const handleAcknowledgeNotification = async (notifId) => {
     try {
-      await fetch(`http://127.0.0.1:8000/api/food-maker/notifications/${notifId}/acknowledge`, {
+      await fetch(`${API_BASE_URL}/api/food-maker/notifications/${notifId}/acknowledge`, {
         method: 'PATCH'
       });
       setNotifications(prev => prev.map(n => n.id === notifId ? { ...n, status: 'ACKNOWLEDGED', read: 1 } : n));
@@ -90,7 +91,7 @@ function FoodMakerDashboard() {
         kitchenId = 'BLR-KITCHEN-02';
       }
 
-      const res = await fetch(`http://127.0.0.1:8000/api/orders/${orderId}/cancel`, {
+      const res = await fetch(`${API_BASE_URL}/api/orders/${orderId}/cancel`, {
         method: 'POST',
         headers: {
           'X-Role': station === 'admin' ? 'admin' : 'food_maker',
@@ -318,7 +319,7 @@ function FoodMakerDashboard() {
                       <button
                         onClick={async () => {
                           try {
-                            const res = await fetch(`http://127.0.0.1:8000/api/food-maker/orders/${order.id}/status`, {
+                            const res = await fetch(`${API_BASE_URL}/api/food-maker/orders/${order.id}/status`, {
                               method: 'PATCH',
                               headers: { 'Content-Type': 'application/json' },
                               body: JSON.stringify({ status: 'Accepted' })
@@ -340,7 +341,7 @@ function FoodMakerDashboard() {
                       <button
                         onClick={async () => {
                           try {
-                            const res = await fetch(`http://127.0.0.1:8000/api/food-maker/orders/${order.id}/status`, {
+                            const res = await fetch(`${API_BASE_URL}/api/food-maker/orders/${order.id}/status`, {
                               method: 'PATCH',
                               headers: { 'Content-Type': 'application/json' },
                               body: JSON.stringify({ status: 'Preparing' })
@@ -362,7 +363,7 @@ function FoodMakerDashboard() {
                       <button
                         onClick={async () => {
                           try {
-                            const res = await fetch(`http://127.0.0.1:8000/api/food-maker/orders/${order.id}/status`, {
+                            const res = await fetch(`${API_BASE_URL}/api/food-maker/orders/${order.id}/status`, {
                               method: 'PATCH',
                               headers: { 'Content-Type': 'application/json' },
                               body: JSON.stringify({ status: 'Ready' })
@@ -384,7 +385,7 @@ function FoodMakerDashboard() {
                       <button
                         onClick={async () => {
                           try {
-                            const res = await fetch(`http://127.0.0.1:8000/api/food-maker/orders/${order.id}/status`, {
+                            const res = await fetch(`${API_BASE_URL}/api/food-maker/orders/${order.id}/status`, {
                               method: 'PATCH',
                               headers: { 'Content-Type': 'application/json' },
                               body: JSON.stringify({ status: 'Completed' })

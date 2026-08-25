@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ClipboardList, ArrowLeft, Loader2, Sparkles, Check, CheckSquare, XCircle, AlertCircle } from 'lucide-react';
 import { useRole } from '../context/RoleContext';
+import { API_BASE_URL } from '../apiConfig';
 
 const STEPPER = [
   { label: 'Order Received', desc: 'Logged in darkstore system' },
@@ -28,7 +29,7 @@ function OrderConfirmation() {
   useEffect(() => {
     const fetchOrder = async () => {
       try {
-        const response = await fetch(`http://127.0.0.1:8000/api/orders/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/api/orders/${id}`, {
           headers: {
             'X-Customer-ID': customerId || 'demo_user'
           }
@@ -42,7 +43,7 @@ function OrderConfirmation() {
         
         // Fetch recipe preview
         try {
-          const previewRes = await fetch(`http://127.0.0.1:8000/api/recipe/preview?order_id=${id}`);
+          const previewRes = await fetch(`${API_BASE_URL}/api/recipe/preview?order_id=${id}`);
           if (previewRes.ok) {
             const previewData = await previewRes.json();
             setRecipePreview(previewData);
@@ -74,7 +75,7 @@ function OrderConfirmation() {
   useEffect(() => {
     const pollStatus = async () => {
       try {
-        const response = await fetch(`http://127.0.0.1:8000/api/orders/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/api/orders/${id}`, {
           headers: {
             'X-Customer-ID': customerId || 'demo_user'
           }
@@ -97,7 +98,7 @@ function OrderConfirmation() {
     if (!window.confirm("Are you sure you want to cancel your order? Inventory reserved for your meal will be released.")) return;
     setCancelling(true);
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/orders/${id}/cancel`, {
+      const res = await fetch(`${API_BASE_URL}/api/orders/${id}/cancel`, {
         method: 'POST',
         headers: {
           'X-Customer-ID': customerId || 'demo_user'

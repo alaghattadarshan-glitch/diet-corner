@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Flame, Calculator, User, Zap, Activity } from 'lucide-react';
 import { useRole } from '../context/RoleContext';
+import { API_BASE_URL } from '../apiConfig';
 
 const ACTIVITY_LEVELS = [
   { id: 'sedentary', label: 'Sedentary', desc: 'Little or no exercise', multiplier: 1.2 },
@@ -102,7 +103,7 @@ function CalorieCalculator({ onApplyCalorieTarget, onApplyProteinTarget, onApply
 
     setCalculating(true);
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/nutrition/calculate-calories', {
+      const response = await fetch(`${API_BASE_URL}/api/nutrition/calculate-calories`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Cpu, HelpCircle, Layers, ArrowRight, ShieldCheck, Database, ListChecks, FileJson } from 'lucide-react';
+import { API_BASE_URL } from '../apiConfig';
 
 function DeveloperAiPanel() {
   const [logs, setLogs] = useState([]);
@@ -11,13 +12,13 @@ function DeveloperAiPanel() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const response = await fetch('http://127.0.0.1:8000/api/demo/ai-logs');
+        const response = await fetch(`${API_BASE_URL}/api/demo/ai-logs`);
         if (response.ok) {
           const data = await response.json();
           setLogs(data.logs || []);
         }
         
-        const statsRes = await fetch('http://127.0.0.1:8000/api/admin/ai-recipe/stats');
+        const statsRes = await fetch(`${API_BASE_URL}/api/admin/ai-recipe/stats`);
         if (statsRes.ok) {
           const statsData = await statsRes.json();
           setStats(statsData);

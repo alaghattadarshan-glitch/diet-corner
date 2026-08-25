@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Sliders, HelpCircle, ShieldCheck, X, User } from 'lucide-react';
 import CalorieCalculator from './CalorieCalculator';
+import { API_BASE_URL } from '../apiConfig';
 
 const PRESETS = {
   'high-protein': { protein: 45, carbs: 35, fat: 15, calories: 500 },
@@ -95,7 +96,7 @@ function MacroForm() {
     };
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/match-meal', {
+      const response = await fetch(`${API_BASE_URL}/api/match-meal`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

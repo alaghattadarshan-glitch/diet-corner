@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, PackageCheck, RefreshCw, AlertTriangle, CheckCircle2, AlertCircle } from 'lucide-react';
+import { API_BASE_URL } from '../apiConfig';
 
 function FoodMakerInventory() {
   const [inventory, setInventory] = useState([]);
@@ -19,7 +20,7 @@ function FoodMakerInventory() {
         queryStr = `maker_id=admin`;
       }
 
-      const res = await fetch(`http://127.0.0.1:8000/api/food-maker/inventory?${queryStr}`, {
+      const res = await fetch(`${API_BASE_URL}/api/food-maker/inventory?${queryStr}`, {
         headers: { 'X-Role': station === 'admin' ? 'admin' : 'food_maker' }
       });
       if (!res.ok) throw new Error("Failed to load kitchen inventory summary.");

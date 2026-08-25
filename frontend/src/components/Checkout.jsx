@@ -5,6 +5,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { MapPin, ShoppingCart, ShieldCheck, ArrowRight, Plus, CheckCircle2, CreditCard, AlertCircle } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useRole } from '../context/RoleContext';
+import { API_BASE_URL } from '../apiConfig';
 
 function Checkout() {
   const navigate = useNavigate();
@@ -27,7 +28,7 @@ function Checkout() {
   useEffect(() => {
     if (!selectedAddress && customerId) {
       setLoadingAddress(true);
-      fetch('http://127.0.0.1:8000/api/customer/addresses', {
+      fetch(`${API_BASE_URL}/api/customer/addresses`, {
         headers: { 'X-Customer-ID': customerId }
       })
         .then(res => res.json())
@@ -111,7 +112,7 @@ function Checkout() {
     };
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/create-order', {
+      const response = await fetch(`${API_BASE_URL}/api/create-order`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

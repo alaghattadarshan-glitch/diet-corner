@@ -1,36 +1,55 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
+import { fileURLToPath } from 'url'
 
-// Operations App Vite Configuration (Port 5174)
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = resolve(__filename, '..')
+
 export default defineConfig({
   plugins: [
     react(),
     {
       name: 'operations-rewrite',
+
       configureServer(server) {
         server.middlewares.use((req, res, next) => {
-          const url = req.url.split('?')[0];
-          // Rewrite root and SPA routes to operations.html
+          const url = req.url.split('?')[0]
+
           if (
-            url === '/' || 
-            (!url.includes('.') && 
-             !url.startsWith('/api') && 
-             !url.startsWith('/@') && 
-             !url.startsWith('/src') && 
-             !url.startsWith('/node_modules'))
+            url === '/' ||
+            (
+              !url.includes('.') &&
+              !url.startsWith('/api') &&
+              !url.startsWith('/@') &&
+              !url.startsWith('/src') &&
+              !url.startsWith('/node_modules')
+            )
           ) {
-            req.url = '/operations.html';
+            req.url = '/operations.html'
           }
-          next();
-        });
+
+          next()
+        })
+      },
+
+      generateBundle(options, bundle) {
+        const operationsHtml = bundle['operations.html']
+
+        if (operationsHtml) {
+          operationsHtml.fileName = 'index.html'
+          bundle['index.html'] = operationsHtml
+          delete bundle['operations.html']
+        }
       }
     }
   ],
+
   server: {
     port: 5174,
     strictPort: true
   },
+
   build: {
     rollupOptions: {
       input: {

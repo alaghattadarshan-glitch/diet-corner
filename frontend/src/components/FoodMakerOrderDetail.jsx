@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Loader2, Sparkles, AlertTriangle, CheckSquare, ShieldCheck, Tag, Info, AlertOctagon, CheckCircle2, PackageCheck } from 'lucide-react';
+import { API_BASE_URL } from '../apiConfig';
 
 const SYSTEM_CHECKLIST = [
   "Order accepted",
@@ -39,7 +40,7 @@ function FoodMakerOrderDetail() {
           kitchenId = 'BLR-KITCHEN-02';
         }
 
-        const orderRes = await fetch(`http://127.0.0.1:8000/api/orders/${id}`, {
+        const orderRes = await fetch(`${API_BASE_URL}/api/orders/${id}`, {
           headers: {
             'X-Role': station === 'admin' ? 'admin' : 'food_maker',
             'maker_id': station,
@@ -59,13 +60,13 @@ function FoodMakerOrderDetail() {
           setChecklist([]);
         }
 
-        const recipeRes = await fetch(`http://127.0.0.1:8000/api/recipe/detail?order_id=${id}`);
+        const recipeRes = await fetch(`${API_BASE_URL}/api/recipe/detail?order_id=${id}`);
         if (recipeRes.ok) {
           const recipeData = await recipeRes.json();
           setRecipe(recipeData);
         }
 
-        const invRes = await fetch('http://127.0.0.1:8000/api/inventory');
+        const invRes = await fetch(`${API_BASE_URL}/api/inventory`);
         if (invRes.ok) {
           const invData = await invRes.json();
           setInventory(invData.ingredients || invData || []);
@@ -87,7 +88,7 @@ function FoodMakerOrderDetail() {
         kitchenId = 'BLR-KITCHEN-02';
       }
 
-      const res = await fetch(`http://127.0.0.1:8000/api/food-maker/orders/${id}/status`, {
+      const res = await fetch(`${API_BASE_URL}/api/food-maker/orders/${id}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -119,7 +120,7 @@ function FoodMakerOrderDetail() {
         kitchenId = 'BLR-KITCHEN-02';
       }
 
-      await fetch(`http://127.0.0.1:8000/api/food-maker/orders/${id}/checklist`, {
+      await fetch(`${API_BASE_URL}/api/food-maker/orders/${id}/checklist`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -153,7 +154,7 @@ function FoodMakerOrderDetail() {
         kitchenId = 'BLR-KITCHEN-02';
       }
 
-      const res = await fetch(`http://127.0.0.1:8000/api/food-maker/orders/${id}/required-items/${ingredientId}/collect`, {
+      const res = await fetch(`${API_BASE_URL}/api/food-maker/orders/${id}/required-items/${ingredientId}/collect`, {
         method: 'PATCH',
         headers: {
           'X-Role': station === 'admin' ? 'admin' : 'food_maker',

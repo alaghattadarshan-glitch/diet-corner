@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Calendar, RefreshCw, AlertTriangle, UserCheck, ChevronRight, Edit2, Check, X, ShieldAlert, TrendingUp } from 'lucide-react';
+import { API_BASE_URL } from '../apiConfig';
 
 function SubscriptionDashboard() {
   const [schedule, setSchedule] = useState([]);
@@ -26,7 +27,7 @@ function SubscriptionDashboard() {
   const fetchSchedule = async (pType = planType, mPerDay = mealsPerDay) => {
     setLoadingSchedule(true);
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/subscription/plan?plan_type=${pType}&meals_per_day=${mPerDay}`);
+      const response = await fetch(`${API_BASE_URL}/api/subscription/plan?plan_type=${pType}&meals_per_day=${mPerDay}`);
       const data = await response.json();
       setSchedule(data.schedule || []);
     } catch (err) {
@@ -40,7 +41,7 @@ function SubscriptionDashboard() {
   const fetchForecast = async () => {
     setLoadingForecast(true);
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/forecast');
+      const response = await fetch(`${API_BASE_URL}/api/forecast`);
       const data = await response.json();
       setForecast(data.forecast || []);
     } catch (err) {
@@ -60,7 +61,7 @@ function SubscriptionDashboard() {
     setLoadingSwapOptions(true);
     setSwappingDay(dayItem);
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/subscription/swap-options', {
+      const response = await fetch(`${API_BASE_URL}/api/subscription/swap-options`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -82,7 +83,7 @@ function SubscriptionDashboard() {
   const handleSwap = async (option) => {
     if (!swappingDay) return;
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/subscription/update', {
+      const response = await fetch(`${API_BASE_URL}/api/subscription/update`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -108,7 +109,7 @@ function SubscriptionDashboard() {
 
   const updateDayStatus = async (day, mealSlot, status) => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/subscription/update', {
+      const response = await fetch(`${API_BASE_URL}/api/subscription/update`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -141,7 +142,7 @@ function SubscriptionDashboard() {
 
   const saveMacros = async (dayName, mealSlot) => {
     try {
-      const solveRes = await fetch('http://127.0.0.1:8000/api/subscription/swap-options', {
+      const solveRes = await fetch(`${API_BASE_URL}/api/subscription/swap-options`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editForm)
@@ -155,7 +156,7 @@ function SubscriptionDashboard() {
 
       const bestOption = solveData.options[0];
 
-      const response = await fetch('http://127.0.0.1:8000/api/subscription/update', {
+      const response = await fetch(`${API_BASE_URL}/api/subscription/update`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

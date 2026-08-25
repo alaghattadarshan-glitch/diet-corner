@@ -5,6 +5,7 @@ import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Sparkles, ChefHat, Tag, AlertTriangle, CheckCircle, ArrowRight, ShoppingCart } from 'lucide-react';
 import { useRole } from '../context/RoleContext';
 import { useCart } from '../context/CartContext';
+import { API_BASE_URL } from '../apiConfig';
 
 function MealResults() {
   const location = useLocation();
@@ -84,7 +85,7 @@ function MealResults() {
     };
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/create-order', {
+      const response = await fetch(`${API_BASE_URL}/api/create-order`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

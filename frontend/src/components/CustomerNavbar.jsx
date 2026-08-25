@@ -5,6 +5,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { ShoppingCart, User, MapPin, Sparkles, Utensils, Calendar } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useRole } from '../context/RoleContext';
+import { API_BASE_URL } from '../apiConfig';
 
 function CustomerNavbar() {
   const location = useLocation();
@@ -29,7 +30,7 @@ function CustomerNavbar() {
         setDeliveryArea('Select location');
       }
     } else if (customerId) {
-      fetch(`http://127.0.0.1:8000/api/customer/addresses`, {
+      fetch(`${API_BASE_URL}/api/customer/addresses`, {
         headers: { 'X-Customer-ID': customerId }
       })
         .then(res => res.json())
