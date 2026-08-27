@@ -13,8 +13,17 @@ function MealResults() {
   const { customerId } = useRole();
   const { addToCart } = useCart();
   
-  const options = location.state?.options || [];
-  const requestPayload = location.state?.requestPayload || {};
+  const options = location.state?.options || (sessionStorage.getItem('last_meal_options') ? JSON.parse(sessionStorage.getItem('last_meal_options')) : []);
+  const requestPayload = location.state?.requestPayload || (sessionStorage.getItem('last_meal_payload') ? JSON.parse(sessionStorage.getItem('last_meal_payload')) : {});
+
+  React.useEffect(() => {
+    if (location.state?.options) {
+      sessionStorage.setItem('last_meal_options', JSON.stringify(location.state.options));
+    }
+    if (location.state?.requestPayload) {
+      sessionStorage.setItem('last_meal_payload', JSON.stringify(location.state.requestPayload));
+    }
+  }, [location.state]);
 
   const [selectedOrderingOptionId, setSelectedOrderingOptionId] = useState(null);
   const [addedCartMap, setAddedCartMap] = useState({});
