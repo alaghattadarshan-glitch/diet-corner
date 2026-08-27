@@ -155,7 +155,7 @@ function MealResults() {
           return (
             <div
               key={opt.id}
-              className="bg-white rounded-3xl border border-gray-200 p-6 md:p-8 card-shadow flex flex-col md:flex-row justify-between gap-6 hover:-translate-y-0.5 transition-all relative overflow-hidden"
+              className="bg-white rounded-3xl border border-gray-200 p-4 sm:p-6 md:p-8 card-shadow flex flex-col md:flex-row justify-between gap-6 hover:-translate-y-0.5 transition-all relative overflow-hidden"
             >
               {/* Option Number Tag */}
               <div className="absolute top-0 left-0 bg-[#6D28D9] text-white text-[9px] font-black px-3.5 py-1 rounded-br-2xl uppercase tracking-wider">

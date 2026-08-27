@@ -284,7 +284,7 @@ function CalorieCalculator({ onApplyCalorieTarget, onApplyProteinTarget, onApply
         </div>
 
         {/* Calculated Energy Parameters */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="bg-[#F9FAFB] border border-gray-200 rounded-2xl p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#F3E8FF] text-[#6D28D9] flex items-center justify-center shrink-0">
               <Zap size={20} />

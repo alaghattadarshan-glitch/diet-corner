@@ -1,0 +1,16 @@
+{
+  "short_name": "DietCorner",
+  "name": "AI Diet Corner — Fresh Healthy Meals",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#ffffff",
+  "theme_color": "#6D28D9",
+  "display": "standalone",
+  "orientation": "portrait"
+}

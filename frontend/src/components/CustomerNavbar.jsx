@@ -61,41 +61,43 @@ function CustomerNavbar() {
     return false;
   };
 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-150 shadow-xs font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           
           {/* Logo & Quick Location */}
-          <div className="flex items-center gap-4 sm:gap-6">
+          <div className="flex items-center gap-2 sm:gap-6">
             <Link to="/" className="flex items-center gap-2 group">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#6D28D9] to-[#8B5CF6] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-all">
-                <Sparkles size={22} className="animate-spin-slow" />
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-[#6D28D9] to-[#8B5CF6] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-all">
+                <Sparkles size={20} className="animate-spin-slow" />
               </div>
               <div className="flex flex-col">
-                <span className="text-lg font-black text-gray-900 tracking-tight leading-none group-hover:text-[#6D28D9] transition-colors">
+                <span className="text-base sm:text-lg font-black text-gray-900 tracking-tight leading-none group-hover:text-[#6D28D9] transition-colors">
                   Diet<span className="text-[#6D28D9]">Corner</span>
                 </span>
-                <span className="text-[10px] text-gray-400 font-bold tracking-widest uppercase">Fresh • AI Nutrition</span>
+                <span className="text-[9px] sm:text-[10px] text-gray-400 font-bold tracking-widest uppercase">Fresh • AI</span>
               </div>
             </Link>
 
             {/* Dynamic Location Header Pill */}
             <Link
               to="/checkout/location"
-              className="flex items-center gap-1.5 bg-[#F3E8FF] border border-[#D8B4FE] text-[#6D28D9] px-3 py-1.5 rounded-full text-xs font-bold hover:bg-[#E9D5FF] transition-all shadow-xs"
+              className="flex items-center gap-1 bg-[#F3E8FF] border border-[#D8B4FE] text-[#6D28D9] px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-bold hover:bg-[#E9D5FF] transition-all shadow-xs"
               title="Change Delivery Location"
             >
-              <MapPin size={14} className="text-[#6D28D9] shrink-0" />
-              <span className="truncate max-w-[130px] sm:max-w-[180px]">{deliveryArea}</span>
+              <MapPin size={13} className="text-[#6D28D9] shrink-0" />
+              <span className="truncate max-w-[90px] xs:max-w-[120px] sm:max-w-[180px]">{deliveryArea}</span>
               {deliveryArea !== 'Select location' && (
-                <span className="text-[10px] text-[#7C3AED] font-extrabold">• 10–15 mins</span>
+                <span className="hidden md:inline text-[10px] text-[#7C3AED] font-extrabold">• 10–15 mins</span>
               )}
             </Link>
           </div>
 
-          {/* Customer Navigation Links */}
-          <nav className="flex items-center gap-1 sm:gap-2">
+          {/* Desktop Navigation Links */}
+          <nav className="hidden md:flex items-center gap-1 sm:gap-2">
             <Link
               to="/"
               className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
@@ -157,7 +159,90 @@ function CustomerNavbar() {
             </Link>
           </nav>
 
+          {/* Mobile Right Controls: Cart + Hamburger */}
+          <div className="flex items-center gap-2 md:hidden">
+            <Link
+              to="/cart"
+              className="relative p-2 rounded-2xl bg-[#6D28D9] text-white hover:bg-[#5B21B6] transition-all shadow-md flex items-center justify-center"
+            >
+              <ShoppingCart size={18} />
+              {cartCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-[#EF4444] text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-xs">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 rounded-2xl bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all"
+              aria-label="Toggle Menu"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {mobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
+
         </div>
+
+        {/* Mobile Dropdown Navigation Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden py-3 border-t border-gray-100 space-y-1 bg-white">
+            <Link
+              to="/"
+              onClick={() => setMobileMenuOpen(false)}
+              className={`block px-4 py-3 rounded-2xl text-xs font-bold transition-all ${
+                isActive('/') && location.pathname === '/'
+                  ? 'bg-[#6D28D9] text-white'
+                  : 'text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              Home
+            </Link>
+            <Link
+              to="/diet-corner"
+              onClick={() => setMobileMenuOpen(false)}
+              className={`flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-bold transition-all ${
+                isActive('/diet-corner')
+                  ? 'bg-[#6D28D9] text-white'
+                  : 'text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <Utensils size={15} />
+              <span>Diet Corner</span>
+            </Link>
+            <Link
+              to="/subscriptions"
+              onClick={() => setMobileMenuOpen(false)}
+              className={`flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-bold transition-all ${
+                isActive('/subscriptions')
+                  ? 'bg-[#6D28D9] text-white'
+                  : 'text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <Calendar size={15} />
+              <span>Subscriptions</span>
+            </Link>
+            <Link
+              to="/profile"
+              onClick={() => setMobileMenuOpen(false)}
+              className={`flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-bold transition-all ${
+                isActive('/profile')
+                  ? 'bg-[#6D28D9] text-white'
+                  : 'text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <User size={15} />
+              <span>Profile & Addresses</span>
+            </Link>
+          </div>
+        )}
       </div>
     </header>
   );
