@@ -10,14 +10,17 @@ def call_llm(prompt: str, system_instruction: str) -> Optional[str]:
     Calls the configured external LLM provider if AI_API_KEY is available.
     Otherwise, returns None (triggering local high-fidelity generator/fallback).
     """
+    if os.getenv("TESTING") == "1":
+        return None
+
     api_key = os.getenv("AI_API_KEY")
-    if not api_key:
+    if not api_key or api_key.startswith("demo") or api_key == "mock":
         return None
         
     # Example integration with Gemini API (or OpenAI depending on the key)
     try:
         # Standard HTTP client call to avoid external dependency issues
-        conn = http.client.HTTPSConnection("generativelanguage.googleapis.com")
+        conn = http.client.HTTPSConnection("generativelanguage.googleapis.com", timeout=3)
         headers = {"Content-Type": "application/json"}
         payload = {
             "contents": [{

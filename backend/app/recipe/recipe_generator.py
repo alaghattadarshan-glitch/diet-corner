@@ -166,56 +166,57 @@ def generate_recipe_instructions(
             current_prompt += f"\n\nWARNING: Your previous response was INVALID. Fix all mismatch errors. Ensure you match the quantities EXACTLY: {expected_ingredients_map}"
             
         llm_output = call_llm(current_prompt, system_instruction)
-        if llm_output:
-            try:
-                # Clean JSON markdown syntax
-                clean_json = llm_output.strip()
-                if clean_json.startswith("```json"):
-                    clean_json = clean_json[7:]
-                if clean_json.endswith("```"):
-                    clean_json = clean_json[:-3]
-                clean_json = clean_json.strip()
-                
-                recipe_data = json.loads(clean_json)
-                recipe_obj = StructuredRecipe(**recipe_data)
-                
-                # Check validation details
-                val_res = validate_recipe_with_details(recipe_obj, expected_ingredients_map, diet_type, prep_tier_limit, allergies)
-                
-                log_validation_to_db(
-                    order_id=order_id,
-                    recipe_id=retrieved_id,
+        if not llm_output:
+            break
+        try:
+            # Clean JSON markdown syntax
+            clean_json = llm_output.strip()
+            if clean_json.startswith("```json"):
+                clean_json = clean_json[7:]
+            if clean_json.endswith("```"):
+                clean_json = clean_json[:-3]
+            clean_json = clean_json.strip()
+            
+            recipe_data = json.loads(clean_json)
+            recipe_obj = StructuredRecipe(**recipe_data)
+            
+            # Check validation details
+            val_res = validate_recipe_with_details(recipe_obj, expected_ingredients_map, diet_type, prep_tier_limit, allergies)
+            
+            log_validation_to_db(
+                order_id=order_id,
+                recipe_id=retrieved_id,
+                model_name=model_name,
+                attempt=attempt,
+                status="PASS" if val_res["valid"] else "FAIL",
+                checks=val_res["checks"],
+                fallback_used=False,
+                reason=val_res["reason"]
+            )
+            
+            if val_res["valid"]:
+                log_ai_activity(
+                    recipe_name=recipe_title,
+                    retrieved_recipe_id=retrieved_id,
                     model_name=model_name,
-                    attempt=attempt,
-                    status="PASS" if val_res["valid"] else "FAIL",
-                    checks=val_res["checks"],
-                    fallback_used=False,
-                    reason=val_res["reason"]
+                    status="SUCCESS" if attempt == 1 else "SUCCESS ON RETRY",
+                    fallback_used=False
                 )
-                
-                if val_res["valid"]:
-                    log_ai_activity(
-                        recipe_name=recipe_title,
-                        retrieved_recipe_id=retrieved_id,
-                        model_name=model_name,
-                        status="SUCCESS" if attempt == 1 else "SUCCESS ON RETRY",
-                        fallback_used=False
-                    )
-                    return recipe_obj.dict()
-                else:
-                    print(f"Validation failed on attempt {attempt}: {val_res['reason']}")
-            except Exception as err:
-                print(f"Failed to parse LLM output on attempt {attempt}: {err}")
-                log_validation_to_db(
-                    order_id=order_id,
-                    recipe_id=retrieved_id,
-                    model_name=model_name,
-                    attempt=attempt,
-                    status="FAIL",
-                    checks={"ingredients": False, "quantities": False, "diet": False, "allergies": False, "prep_tier": False},
-                    fallback_used=False,
-                    reason=f"JSON/Pydantic Parsing error: {str(err)}"
-                )
+                return recipe_obj.dict()
+            else:
+                print(f"Validation failed on attempt {attempt}: {val_res['reason']}")
+        except Exception as err:
+            print(f"Failed to parse LLM output on attempt {attempt}: {err}")
+            log_validation_to_db(
+                order_id=order_id,
+                recipe_id=retrieved_id,
+                model_name=model_name,
+                attempt=attempt,
+                status="FAIL",
+                checks={"ingredients": False, "quantities": False, "diet": False, "allergies": False, "prep_tier": False},
+                fallback_used=False,
+                reason=f"JSON/Pydantic Parsing error: {str(err)}"
+            )
 
     # --- FALLBACK / DETERMINISTIC GENERATOR ---
     # Construct a high-fidelity local structured recipe based on the grounding database recipe

@@ -57,11 +57,15 @@ class PostgresCursor:
             raise e
 
     def executescript(self, script_str):
-        # Run statements sequentially
-        for stmt in script_str.split(";"):
-            stmt_strip = stmt.strip()
-            if stmt_strip:
-                self.execute(stmt_strip)
+        # Execute script with postgres cursor directly to preserve PL/pgSQL $$ blocks
+        try:
+            self._cursor.execute(script_str)
+        except Exception as e:
+            try:
+                self._conn.rollback()
+            except Exception:
+                pass
+            raise e
 
     def executemany(self, query, params_list):
         query = self._convert_query(query)
@@ -131,11 +135,13 @@ def get_db_connection():
         # Clean postgres:// to postgresql:// if needed for libraries
         if db_url.startswith("postgres://"):
             db_url = db_url.replace("postgres://", "postgresql://", 1)
-        conn = psycopg2.connect(db_url)
+        # Connect with fail-fast timeout (connect_timeout=10) to prevent indefinite hangs
+        conn = psycopg2.connect(db_url, connect_timeout=10)
         return PostgresConnection(conn)
     else:
         import sqlite3
         conn = sqlite3.connect(DB_PATH, timeout=30.0)
+        conn.execute("PRAGMA journal_mode=WAL;")
         conn.row_factory = sqlite3.Row
         return conn
 
@@ -143,45 +149,49 @@ def init_db():
     db_url = os.getenv("DATABASE_URL")
     is_prod = os.getenv("ENVIRONMENT") == "production" or "RENDER" in os.environ
     if is_prod and not db_url:
-        raise ValueError("DATABASE_URL is not configured for production environment!")
+        print("WARNING: DATABASE_URL is not configured for production environment! Skipping PostgreSQL initialization.")
+        return
         
     if db_url and (db_url.startswith("postgresql://") or db_url.startswith("postgres://")):
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        has_ingredients = False
         try:
-            cursor.execute("SELECT COUNT(*) FROM ingredients")
-            row = cursor.fetchone()
-            if row and row[0] > 0:
-                has_ingredients = True
-        except Exception:
-            conn.rollback()
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            has_ingredients = False
+            try:
+                cursor.execute("SELECT COUNT(*) FROM ingredients")
+                row = cursor.fetchone()
+                if row and row[0] > 0:
+                    has_ingredients = True
+            except Exception:
+                conn.rollback()
 
-        if not has_ingredients:
-            print("Initializing PostgreSQL Database Schema...")
-            schema_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../database/schema_postgres.sql"))
-            seed_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../database/seed_postgres.sql"))
+            if not has_ingredients:
+                print("Initializing PostgreSQL Database Schema...")
+                schema_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../database/schema_postgres.sql"))
+                seed_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../database/seed_postgres.sql"))
+                
+                with open(schema_path, "r") as f:
+                    schema_sql = f.read()
+                    cursor.executescript(schema_sql)
+                conn.commit()
+                
+                print("Seeding PostgreSQL Database with Ingredients...")
+                with open(seed_path, "r") as f:
+                    seed_sql = f.read()
+                    cursor.executescript(seed_sql)
+                conn.commit()
+                
+            conn.close()
+            print("PostgreSQL Database Initialized/Updated Successfully.")
             
-            with open(schema_path, "r") as f:
-                schema_sql = f.read()
-                cursor.executescript(schema_sql)
-            conn.commit()
-            
-            print("Seeding PostgreSQL Database with Ingredients...")
-            with open(seed_path, "r") as f:
-                seed_sql = f.read()
-                cursor.executescript(seed_sql)
-            conn.commit()
-            
-        conn.close()
-        print("PostgreSQL Database Initialized/Updated Successfully.")
-        
-        try:
-            from app.database.seed_recipes import seed_recipes
-            seed_recipes()
+            try:
+                from app.database.seed_recipes import seed_recipes
+                seed_recipes()
+            except Exception as e:
+                print(f"Error seeding recipes: {e}")
         except Exception as e:
-            print(f"Error seeding recipes: {e}")
+            print(f"WARNING: PostgreSQL connection/initialization error: {e}")
             
     else:
         import sqlite3
